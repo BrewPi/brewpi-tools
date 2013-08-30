@@ -41,6 +41,21 @@ die () {
 }
 
 ############
+### Setup questions
+############
+read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
+if [ -z "$installPath" ]; then
+  installPath="/home/brewpi"
+fi
+
+echo "The following location will be ERASED during install!"
+read -p "What is the path to your web directory? [/var/www]: " webPath
+if [ -z "$webPath" ]; then
+  webPath="/var/www"
+fi
+
+
+############
 ### Install required packages
 ############
 sudo apt-get update
@@ -50,7 +65,7 @@ sudo apt-get install rpi-update apache2 libapache2-mod-php5 php5-cli php5-common
 ### Create/configure user accounts
 ############
 echo "Creating and configuring user accounts..."
-sudo chown -R www-data:www-data /var/www||die
+sudo chown -R www-data:www-data $webPath||die
 if id -u brewpi >/dev/null 2>&1; then
   echo "User 'brewpi' already exists, skipping..."
 else
@@ -59,30 +74,31 @@ fi
 echo -e "brewpi\nbrewpi\n" | sudo passwd brewpi||die
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
-sudo chown -R www-data:www-data /var/www||die
-sudo chown -R brewpi:brewpi /home/brewpi||die
+sudo chown -R www-data:www-data $webPath||die
+sudo chown -R brewpi:brewpi $installPath||die
 
 ############
 ### Set sticky bit! nom nom nom
 ############
-sudo find /home/brewpi -type f -exec chmod g+rwx {} \;||die
-sudo find /home/brewpi -type d -exec chmod g+rwxs {} \;||die
-sudo find /var/www -type d -exec chmod g+rwxs {} \;||die
-sudo find /var/www -type f -exec chmod g+rwx {} \;||die
+sudo find $installPath -type f -exec chmod g+rwx {} \;||die
+sudo find $installpath -type d -exec chmod g+rwxs {} \;||die
+sudo find $webPath -type d -exec chmod g+rwxs {} \;||die
+sudo find $webPath -type f -exec chmod g+rwx {} \;||die
 
 ############
 ### Clone BrewPi repositories
 ############
 echo "Downloading most recent BrewPi codebase..."
-sudo rm /var/www/*||die
-sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script /home/brewpi||die
-sudo -u www-data git clone https://github.com/BrewPi/brewpi-www /var/www||die
+sudo rm $webPath/*||die
+sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script $installPath||die
+sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
+sudo -u brewpi
 
 ############
 ### Install Web Crontab
 ############
 sudo -u brewpi crontab -l > /tmp/tempcron
-sudo -u brewpi echo -e "* * * * * python -u /home/brewpi/brewpi.py --dontrunfile 1>/home/brewpi/logs/stdout.txt 2>>/home/brewpi/logs/stderr.txt &" >> /tmp/tempcron||die
+sudo -u brewpi echo -e "* * * * * python -u $installPath/brewpi.py --dontrunfile 1>$installPath/logs/stdout.txt 2>>$installPath/logs/stderr.txt &" >> /tmp/tempcron||die
 echo -e "Installing BrewPi www crontab..."
 sudo -u brewpi crontab /tmp/tempcron||die
 rm /tmp/tempcron||die
@@ -103,7 +119,7 @@ fi
 
 echo -e "\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *"
 echo -e "Review the log above for any errors, otherwise, your initial environment install is complete!"
-echo -e "Edit your /home/brewpi/settings/config.cfg file if needed and then read http://docs.brewpi.com/getting-started/program-arduino.html for your next steps"
+echo -e "Edit your $installPath/settings/config.cfg file if needed and then read http://docs.brewpi.com/getting-started/program-arduino.html for your next steps"
 echo -e "\nYou are currently using the password 'brewpi' for the brewpi user. If you wish to change this, type 'sudo passwd brewpi' now, and follow the prompt"
 echo -e "\nHappy Brewing!"
 
