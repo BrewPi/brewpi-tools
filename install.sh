@@ -43,6 +43,7 @@ die () {
 ############
 ### Setup questions
 ############
+echo "The following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
 if [ -z "$installPath" ]; then
   installPath="/home/brewpi"
@@ -69,12 +70,23 @@ sudo chown -R www-data:www-data $webPath||die
 if id -u brewpi >/dev/null 2>&1; then
   echo "User 'brewpi' already exists, skipping..."
 else
-  sudo useradd -m -k /dev/null -G www-data,dialout brewpi||die
+  sudo useradd -G www-data,dialout brewpi||die
 fi
 echo -e "brewpi\nbrewpi\n" | sudo passwd brewpi||die
+
+if [ -d "$installPath" ]; then
+  echo "$installPath already exists"
+else
+  mkdir $installPath
+fi
+if [ "$(ls -A $installPath)" ]; then
+  echo "Install directory is NOT empty, deleting..."
+  rm -rf $installPath/*
+  rm -rf $installPath/.*
+fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
-sudo chown -R www-data:www-data $webPath||die
+sudo chown -R www-data:www-data $webPath||die"
 sudo chown -R brewpi:brewpi $installPath||die
 
 ############
