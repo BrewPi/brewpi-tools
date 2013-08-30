@@ -43,18 +43,40 @@ die () {
 ############
 ### Setup questions
 ############
-echo "The following location will be ERASED during install!"
+echo "Any data in the following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
 if [ -z "$installPath" ]; then
   installPath="/home/brewpi"
 fi
 
-echo "The following location will be ERASED during install!"
+if [ -d "$installPath" ]; then
+  if [ "$(ls -A $installPath)" ]; then
+    read -p "Install directory is NOT empty, are you SURE you want to use this path? [y/N] " yn
+    case $yn in
+        y | Y | yes | YES| Yes ) echo "Ok, we warned you!";;
+        * ) exit;;
+    esac
+  fi
+fi
+
+
+echo "Any data in the following location will be ERASED during install!"
 read -p "What is the path to your web directory? [/var/www]: " webPath
 if [ -z "$webPath" ]; then
   webPath="/var/www"
 fi
 
+if [ -d "$webPath" ]; then
+  if [ "$(ls -A $webPath)" ]; then
+    read -p "Web directory is NOT empty, are you SURE you want to use this path? [y/N] " yn
+    case $yn in
+        y | Y | yes | YES| Yes ) echo "Ok, we warned you!";;
+        * ) exit;;
+    esac
+  fi
+fi
+
+GLOBIGNORE=$installPath/.:$installPath/..
 
 ############
 ### Install required packages
@@ -71,8 +93,8 @@ if id -u brewpi >/dev/null 2>&1; then
   echo "User 'brewpi' already exists, skipping..."
 else
   sudo useradd -G www-data,dialout brewpi||die
+  echo -e "brewpi\nbrewpi\n" | sudo passwd brewpi||die
 fi
-echo -e "brewpi\nbrewpi\n" | sudo passwd brewpi||die
 
 if [ -d "$installPath" ]; then
   echo "$installPath already exists"
@@ -81,12 +103,12 @@ else
 fi
 if [ "$(ls -A $installPath)" ]; then
   echo "Install directory is NOT empty, deleting..."
-  rm -rf $installPath/*
-  rm -rf $installPath/.*
+  sudo -u brewpi rm -rf $installPath/*
+  sudo -u brewpi rm -rf $installPath/.*
 fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
-sudo chown -R www-data:www-data $webPath||die"
+sudo chown -R www-data:www-data $webPath||die
 sudo chown -R brewpi:brewpi $installPath||die
 
 ############
@@ -101,16 +123,15 @@ sudo find $webPath -type f -exec chmod g+rwx {} \;||die
 ### Clone BrewPi repositories
 ############
 echo "Downloading most recent BrewPi codebase..."
-sudo rm $webPath/*||die
+sudo rm -rf $webPath/*||die
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script $installPath||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
-sudo -u brewpi
 
 ############
 ### Install Web Crontab
 ############
-sudo -u brewpi crontab -l > /tmp/tempcron
-sudo -u brewpi echo -e "* * * * * python -u $installPath/brewpi.py --dontrunfile 1>$installPath/logs/stdout.txt 2>>$installPath/logs/stderr.txt &" >> /tmp/tempcron||die
+sudo -u brewpi crontab -l > /tmp/tempcron||die
+sudo -u brewpi echo -e "* * * * * python -u $installPath/brewpi.py --dontrunfile 1>$installPath/logs/stdout.txt 2>>$installPath/logs/stderr.txt &" >> /tmp/tempcron||die||die
 echo -e "Installing BrewPi www crontab..."
 sudo -u brewpi crontab /tmp/tempcron||die
 rm /tmp/tempcron||die
