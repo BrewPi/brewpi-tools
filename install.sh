@@ -57,6 +57,15 @@ if [ -d "$installPath" ]; then
         * ) exit;;
     esac
   fi
+else 
+  read -p "This path does not exist, would you like to create it? [Y/n] " yn
+  if [ -z "$yn" ]; then
+    yn="y"
+  fi
+  case $yn in
+      y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $installPath;;
+      * ) echo "Aborting..."; exit;;
+  esac
 fi
 
 
@@ -74,6 +83,15 @@ if [ -d "$webPath" ]; then
         * ) exit;;
     esac
   fi
+else
+  read -p "This path does not exist, would you like to create it? [Y/n] " yn
+  if [ -z "$yn" ]; then
+    yn="y"
+  fi
+  case $yn in
+      y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $webPath;;
+      * ) echo "Aborting..."; exit;;
+  esac
 fi
 
 GLOBIGNORE=$installPath/.:$installPath/..
@@ -103,8 +121,8 @@ else
 fi
 if [ "$(ls -A $installPath)" ]; then
   echo "Install directory is NOT empty, deleting..."
-  sudo -u brewpi rm -rf $installPath/*
-  sudo -u brewpi rm -rf $installPath/.*
+  sudo -u brewpi rm -rf $installPath/*||die
+  sudo -u brewpi rm -rf $installPath/.*||die
 fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
