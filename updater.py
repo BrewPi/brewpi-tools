@@ -1,15 +1,24 @@
 #!/usr/bin/python
+# Copyright 2013 BrewPi
+# This file is part of BrewPi.
 
-# Need to add in: python-setuptools python-gitdb
+# BrewPi is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-# <Elco> some interactive menu to pick a branch, and stash changes
-# <Elco> and deal with stuff git complains about
-# <Elco> like not having user configured when stashing
-# <Elco> and making sure the permissions are correct after update
+# BrewPi is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with BrewPi. If not, see <http://www.gnu.org/licenses/>.
+
+### Geo Van O, v0.9, Sep 2013
 
 from git import *
 from time import strptime
-from logging import *
 
 ### Function used to stash local changes and update a branch passed to it
 def update_repo(repo, branch):
@@ -53,7 +62,6 @@ def check_repo(repo, branch):
 	else:
 		print "Your local version of "+reponame+" is good to go!"
 	
-
 print "####################################################"
 print "####                                            ####"
 print "####      Welcome to the BrewPi Updater!        ####"
@@ -65,10 +73,16 @@ branch = raw_input("What branch would you like to check? [master]: ")
 if branch is "":
 	branch = "master"
 
-check_repo( Repo('/home/geo/BrewPi/brewpi-www'), branch )
-check_repo( Repo('/home/geo/BrewPi/brewpi-script'), branch )
-check_repo( Repo('/home/geo/BrewPi/brewpi-tools'), branch )
-
-#except:
-#print "Error downloading git repo, local files NOT updated"
+try:
+	check_repo( Repo('/home/geo/BrewPi/brewpi-www'), branch )
+except:
+	print "Error downloading git repo, local files NOT updated"
+try:
+	check_repo( Repo('/home/geo/BrewPi/brewpi-script'), branch )
+except:
+        print "Error downloading git repo, local files NOT updated"
+try:
+	check_repo( Repo('/home/geo/BrewPi/brewpi-tools'), branch )
+except:
+	print "Error downloading git repo, local files NOT updated"
 
