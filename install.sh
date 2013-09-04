@@ -64,7 +64,7 @@ else
       yn="y"
     fi
     case $yn in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $installPath;;
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir $installPath;;
         * ) echo "Aborting..."; exit;;
     esac
   fi
@@ -92,7 +92,7 @@ else
       yn="y"
     fi
     case $yn in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $webPath;;
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir $webPath;;
         * ) echo "Aborting..."; exit;;
     esac
   fi
@@ -121,7 +121,7 @@ fi
 if [ -d "$installPath" ]; then
   echo "$installPath already exists"
 else
-  mkdir $installPath
+  sudo mkdir $installPath
 fi
 if [ "$(ls -A $installPath)" ]; then
   echo "Install directory is NOT empty, deleting..."
