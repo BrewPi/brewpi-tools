@@ -57,15 +57,17 @@ if [ -d "$installPath" ]; then
         * ) exit;;
     esac
   fi
-else 
-  read -p "This path does not exist, would you like to create it? [Y/n] " yn
-  if [ -z "$yn" ]; then
-    yn="y"
+else
+  if [ "$installPath" != "/home/brewpi" ]; then
+    read -p "This path does not exist, would you like to create it? [Y/n] " yn
+    if [ -z "$yn" ]; then
+      yn="y"
+    fi
+    case $yn in
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $installPath;;
+        * ) echo "Aborting..."; exit;;
+    esac
   fi
-  case $yn in
-      y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $installPath;;
-      * ) echo "Aborting..."; exit;;
-  esac
 fi
 
 
@@ -84,14 +86,16 @@ if [ -d "$webPath" ]; then
     esac
   fi
 else
-  read -p "This path does not exist, would you like to create it? [Y/n] " yn
-  if [ -z "$yn" ]; then
-    yn="y"
+  if [ "$webPath" != "/var/www" ]; then
+    read -p "This path does not exist, would you like to create it? [Y/n] " yn
+    if [ -z "$yn" ]; then
+      yn="y"
+    fi
+    case $yn in
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $webPath;;
+        * ) echo "Aborting..."; exit;;
+    esac
   fi
-  case $yn in
-      y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir $webPath;;
-      * ) echo "Aborting..."; exit;;
-  esac
 fi
 
 GLOBIGNORE=$installPath/.:$installPath/..
