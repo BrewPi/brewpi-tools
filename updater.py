@@ -67,7 +67,10 @@ print "####                                            ####"
 print "####      Welcome to the BrewPi Updater!        ####"
 print "####                                            ####"
 print "####################################################"
-
+print ""
+print ""
+print "Hitting Enter will accept the default settings (Best for most users)"
+print ""
 print "Most users will only want to update the master branch."
 branch = raw_input("What branch would you like to check? [master]: ")
 if branch is "":
