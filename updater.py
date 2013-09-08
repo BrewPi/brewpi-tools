@@ -73,16 +73,6 @@ branch = raw_input("What branch would you like to check? [master]: ")
 if branch is "":
 	branch = "master"
 
-try:
-	check_repo( Repo('/home/geo/BrewPi/brewpi-www'), branch )
-except:
-	print "Error downloading git repo, local files NOT updated"
-try:
-	check_repo( Repo('/home/geo/BrewPi/brewpi-script'), branch )
-except:
-        print "Error downloading git repo, local files NOT updated"
-try:
-	check_repo( Repo('/home/geo/BrewPi/brewpi-tools'), branch )
-except:
-	print "Error downloading git repo, local files NOT updated"
+check_repo( Repo('/var/www'), branch )
+check_repo( Repo('/home/brewpi'), branch )
 
