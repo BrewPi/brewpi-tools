@@ -43,6 +43,20 @@ die () {
 ############
 ### Setup questions
 ############
+
+free_percentage=$(df /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $5 }')
+free=$(df /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $4 }')
+free_readable=$(df -H /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $4 }')
+
+if [ "$free" -le "512000" ]; then
+    echo "Disk usage is $free_percentage, free disk space is $free_readable"
+    echo "Not enough space to continue setup. Installing BrewPi requires at least 512mb free space"
+    echo "Did you forget to expand your root partition? To do so run 'sudo raspi-config', expand your root partition and reboot"
+else
+    echo "Disk usage is $free_percentage, free disk space is $free_readable. Enough to install BrewPi"
+fi
+
+
 echo "Any data in the following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
 if [ -z "$installPath" ]; then
