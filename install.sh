@@ -29,8 +29,8 @@
 ############
 warn() {
   local fmt="$1"
-  shift
-#  printf "$fmt\n" "${@}" >&2
+  command shift 2>/dev/null
+  echo -e "$fmt\n" "${@}"
   echo -e "\n*** ERROR ERROR ERROR ERROR ERROR ***\n----------------------------------\nSee above lines for error message\nSetup NOT completed\n"
 }
 
@@ -104,7 +104,7 @@ GLOBIGNORE=$installPath/.:$installPath/..
 ### Install required packages
 ############
 sudo apt-get update
-sudo apt-get install rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die 
+sudo apt-get install -Y rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die 
 
 ############
 ### Create/configure user accounts
