@@ -17,7 +17,7 @@
 # along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
 
 ########################
-### This script assumes a clean Wheezy Raspbian install. 
+### This script assumes a clean Wheezy Raspbian install.
 ### Freeder, v1.0, Aug 2013
 ### Using a custom 'die' function shamelessly stolen from http://mywiki.wooledge.org/BashFAQ/101
 ### Using ideas even more shamelessly stolen from Elco and mdma. Thanks guys!
@@ -104,7 +104,7 @@ GLOBIGNORE=$installPath/.:$installPath/..
 ### Install required packages
 ############
 sudo apt-get update
-sudo apt-get install -Y rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die 
+sudo apt-get install -y rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die
 
 ############
 ### Create/configure user accounts
@@ -126,7 +126,6 @@ fi
 if [ "$(ls -A $installPath)" ]; then
   echo "Install directory is NOT empty, deleting..."
   sudo -u brewpi rm -rf $installPath/*||die
-  sudo -u brewpi rm -rf $installPath/.*||die
 fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
@@ -161,7 +160,7 @@ rm /tmp/tempcron||die
 ############
 ### Check for insecure SSH key
 ############
-defaultKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLNC9E7YjW0Q9btd9aUoAg++/wa06LtBMc1eGPTdu29t89+4onZk1gPGzDYMagHnuBjgBFr4BsZHtng6uCRw8fIftgWrwXxB6ozhD9TM515U9piGsA6H2zlYTlNW99UXLZVUlQzw+OzALOyqeVxhi/FAJzAI9jPLGLpLITeMv8V580g1oPZskuMbnE+oIogdY2TO9e55BWYvaXcfUFQAjF+C02Oo0BFrnkmaNU8v3qBsfQmldsI60+ZaOSnZ0Hkla3b6AnclTYeSQHx5YqiLIFp0e8A1ACfy9vH0qtqq+MchCwDckWrNxzLApOrfwdF4CSMix5RKt9AF+6HOpuI8ZX root@raspberrypi" 
+defaultKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLNC9E7YjW0Q9btd9aUoAg++/wa06LtBMc1eGPTdu29t89+4onZk1gPGzDYMagHnuBjgBFr4BsZHtng6uCRw8fIftgWrwXxB6ozhD9TM515U9piGsA6H2zlYTlNW99UXLZVUlQzw+OzALOyqeVxhi/FAJzAI9jPLGLpLITeMv8V580g1oPZskuMbnE+oIogdY2TO9e55BWYvaXcfUFQAjF+C02Oo0BFrnkmaNU8v3qBsfQmldsI60+ZaOSnZ0Hkla3b6AnclTYeSQHx5YqiLIFp0e8A1ACfy9vH0qtqq+MchCwDckWrNxzLApOrfwdF4CSMix5RKt9AF+6HOpuI8ZX root@raspberrypi"
 
 if grep -q "$defaultKey" /etc/ssh/ssh_host_rsa_key.pub; then
   echo "Replacing default SSH keys. You will need to remove the previous key from known hosts on any clients that have previously connected to this rpi."
