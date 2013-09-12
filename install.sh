@@ -181,9 +181,14 @@ sudo find $webPath -type f -exec chmod g+rwx {} \;||die
 ############
 echo "Downloading most recent BrewPi codebase..."
 sudo rm -rf $installPath/*||die
+sudo find $installPath/ -name '.*' | xargs rm -rf||die
 sudo rm -rf $webPath/*||die
+sudo find $webPath/ -name '.*' | xargs rm -rf||die
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script $installPath||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
+
+echo "Fixing file permissions after git clone, with sh $installPath/fixPremssions.sh"
+sudo sh $installPath/fixPermissions.sh
 
 ############
 ### Install Web Crontab
