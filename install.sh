@@ -61,6 +61,17 @@ echo "Any data in the following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
 if [ -z "$installPath" ]; then
   installPath="/home/brewpi"
+else
+  case $installPath in
+    y | Y | yes | YES| Yes )
+        echo "$installPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
+        read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath;
+        if [ -z "$installPath" ]; then
+            installPath="/home/brewpi"
+        fi;;
+    * )
+        echo "Installing script in $installPath";;
+  esac
 fi
 
 if [ -d "$installPath" ]; then
@@ -89,6 +100,17 @@ echo "Any data in the following location will be ERASED during install!"
 read -p "What is the path to your web directory? [/var/www]: " webPath
 if [ -z "$webPath" ]; then
   webPath="/var/www"
+else
+  case $webPath in
+    y | Y | yes | YES| Yes )
+        echo "$webPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
+        read -p "What is the path to your web directory? [/var/www]: " webPath
+        if [ -z "$webPath" ]; then
+            webPath="/var/www"
+        fi;;
+    * )
+        echo "Installing web interface in $webPath";;
+  esac
 fi
 
 if [ -d "$webPath" ]; then
@@ -158,6 +180,7 @@ sudo find $webPath -type f -exec chmod g+rwx {} \;||die
 ### Clone BrewPi repositories
 ############
 echo "Downloading most recent BrewPi codebase..."
+sudo rm -rf $installPath/*||die
 sudo rm -rf $webPath/*||die
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script $installPath||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
