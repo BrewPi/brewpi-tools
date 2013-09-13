@@ -152,11 +152,16 @@ sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
 ############
 ### Install Web Crontab
 ############
-sudo -u brewpi crontab -l > /tmp/tempcron
-sudo -u brewpi echo -e "* * * * * python -u $installPath/brewpi.py --dontrunfile 1>$installPath/logs/stdout.txt 2>>$installPath/logs/stderr.txt &" >> /tmp/tempcron||die||die
-echo -e "Installing BrewPi www crontab..."
-sudo -u brewpi crontab /tmp/tempcron||die
-rm /tmp/tempcron||die
+sudo -u brewpi crontab -l|grep brewpi.py
+if [ $? -eq 1 ]; then
+	sudo -u brewpi crontab -l > /tmp/tempcron
+	sudo -u brewpi echo -e "* * * * * python -u $installPath/brewpi.py --dontrunfile 1>$installPath/logs/stdout.txt 2>>$installPath/logs/stderr.txt &" >> /tmp/tempcron||die||die
+	echo -e "Installing BrewPi www crontab..."
+	sudo -u brewpi crontab /tmp/tempcron||die
+	rm /tmp/tempcron||die
+else
+	echo "Crontab already installed, skipping..."
+fi
 
 ############
 ### Check for insecure SSH key
