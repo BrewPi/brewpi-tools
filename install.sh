@@ -17,7 +17,7 @@
 # along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
 
 ########################
-### This script assumes a clean Wheezy Raspbian install. 
+### This script assumes a clean Wheezy Raspbian install.
 ### Freeder, v1.0, Aug 2013
 ### Using a custom 'die' function shamelessly stolen from http://mywiki.wooledge.org/BashFAQ/101
 ### Using ideas even more shamelessly stolen from Elco and mdma. Thanks guys!
@@ -29,8 +29,8 @@
 ############
 warn() {
   local fmt="$1"
-  shift
-#  printf "$fmt\n" "${@}" >&2
+  command shift 2>/dev/null
+  echo -e "$fmt\n" "${@}"
   echo -e "\n*** ERROR ERROR ERROR ERROR ERROR ***\n----------------------------------\nSee above lines for error message\nSetup NOT completed\n"
 }
 
@@ -43,10 +43,35 @@ die () {
 ############
 ### Setup questions
 ############
+
+free_percentage=$(df /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $5 }')
+free=$(df /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $4 }')
+free_readable=$(df -H /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $4 }')
+
+if [ "$free" -le "512000" ]; then
+    echo "Disk usage is $free_percentage, free disk space is $free_readable"
+    echo "Not enough space to continue setup. Installing BrewPi requires at least 512mb free space"
+    echo "Did you forget to expand your root partition? To do so run 'sudo raspi-config', expand your root partition and reboot"
+else
+    echo "Disk usage is $free_percentage, free disk space is $free_readable. Enough to install BrewPi"
+fi
+
+
 echo "Any data in the following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
 if [ -z "$installPath" ]; then
   installPath="/home/brewpi"
+else
+  case $installPath in
+    y | Y | yes | YES| Yes )
+        echo "$installPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
+        read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath;
+        if [ -z "$installPath" ]; then
+            installPath="/home/brewpi"
+        fi;;
+    * )
+        echo "Installing script in $installPath";;
+  esac
 fi
 
 if [ -d "$installPath" ]; then
@@ -75,6 +100,17 @@ echo "Any data in the following location will be ERASED during install!"
 read -p "What is the path to your web directory? [/var/www]: " webPath
 if [ -z "$webPath" ]; then
   webPath="/var/www"
+else
+  case $webPath in
+    y | Y | yes | YES| Yes )
+        echo "$webPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
+        read -p "What is the path to your web directory? [/var/www]: " webPath
+        if [ -z "$webPath" ]; then
+            webPath="/var/www"
+        fi;;
+    * )
+        echo "Installing web interface in $webPath";;
+  esac
 fi
 
 if [ -d "$webPath" ]; then
@@ -104,7 +140,7 @@ GLOBIGNORE=$installPath/.:$installPath/..
 ### Install required packages
 ############
 sudo apt-get update
-sudo apt-get install rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die 
+sudo apt-get install -y rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die
 
 ############
 ### Create/configure user accounts
@@ -126,7 +162,6 @@ fi
 if [ "$(ls -A $installPath)" ]; then
   echo "Install directory is NOT empty, deleting..."
   sudo -u brewpi rm -rf $installPath/*||die
-  sudo -u brewpi rm -rf $installPath/.*||die
 fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
@@ -145,9 +180,15 @@ sudo find $webPath -type f -exec chmod g+rwx {} \;||die
 ### Clone BrewPi repositories
 ############
 echo "Downloading most recent BrewPi codebase..."
+sudo rm -rf $installPath/*||die
+sudo find $installPath/ -name '.*' | xargs rm -rf||die
 sudo rm -rf $webPath/*||die
+sudo find $webPath/ -name '.*' | xargs rm -rf||die
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script $installPath||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
+
+echo "Fixing file permissions after git clone, with sh $installPath/fixPremssions.sh"
+sudo sh $installPath/fixPermissions.sh
 
 ############
 ### Install Web Crontab
@@ -166,7 +207,7 @@ fi
 ############
 ### Check for insecure SSH key
 ############
-defaultKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLNC9E7YjW0Q9btd9aUoAg++/wa06LtBMc1eGPTdu29t89+4onZk1gPGzDYMagHnuBjgBFr4BsZHtng6uCRw8fIftgWrwXxB6ozhD9TM515U9piGsA6H2zlYTlNW99UXLZVUlQzw+OzALOyqeVxhi/FAJzAI9jPLGLpLITeMv8V580g1oPZskuMbnE+oIogdY2TO9e55BWYvaXcfUFQAjF+C02Oo0BFrnkmaNU8v3qBsfQmldsI60+ZaOSnZ0Hkla3b6AnclTYeSQHx5YqiLIFp0e8A1ACfy9vH0qtqq+MchCwDckWrNxzLApOrfwdF4CSMix5RKt9AF+6HOpuI8ZX root@raspberrypi" 
+defaultKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDLNC9E7YjW0Q9btd9aUoAg++/wa06LtBMc1eGPTdu29t89+4onZk1gPGzDYMagHnuBjgBFr4BsZHtng6uCRw8fIftgWrwXxB6ozhD9TM515U9piGsA6H2zlYTlNW99UXLZVUlQzw+OzALOyqeVxhi/FAJzAI9jPLGLpLITeMv8V580g1oPZskuMbnE+oIogdY2TO9e55BWYvaXcfUFQAjF+C02Oo0BFrnkmaNU8v3qBsfQmldsI60+ZaOSnZ0Hkla3b6AnclTYeSQHx5YqiLIFp0e8A1ACfy9vH0qtqq+MchCwDckWrNxzLApOrfwdF4CSMix5RKt9AF+6HOpuI8ZX root@raspberrypi"
 
 if grep -q "$defaultKey" /etc/ssh/ssh_host_rsa_key.pub; then
   echo "Replacing default SSH keys. You will need to remove the previous key from known hosts on any clients that have previously connected to this rpi."
