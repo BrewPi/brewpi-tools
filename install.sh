@@ -161,7 +161,10 @@ else
 fi
 if [ "$(ls -A $installPath)" ]; then
   echo "Install directory is NOT empty, deleting..."
-  sudo -u brewpi rm -rf $installPath/*||die
+  sudo rm -rf $installPath/*||die
+  sudo find $installPath/ -name '.*' | xargs rm -rf||die
+  sudo rm -rf $webPath/*||die
+  sudo find $webPath/ -name '.*' | xargs rm -rf||die
 fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
@@ -180,10 +183,6 @@ sudo find $webPath -type f -exec chmod g+rwx {} \;||die
 ### Clone BrewPi repositories
 ############
 echo "Downloading most recent BrewPi codebase..."
-sudo rm -rf $installPath/*||die
-sudo find $installPath/ -name '.*' | xargs rm -rf||die
-sudo rm -rf $webPath/*||die
-sudo find $webPath/ -name '.*' | xargs rm -rf||die
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script $installPath||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
 
