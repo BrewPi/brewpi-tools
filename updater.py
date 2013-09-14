@@ -20,6 +20,15 @@
 from git import *
 from time import strptime
 
+### Function used if requested branch has not been checked out
+def checkout_repo(repo, branch):
+	print "Attempting to checkout "+branch
+	try:
+		repo.git.checkout(branch)
+	except: 
+		print "Failed. Ack! Quitting"
+	print "Success!"
+
 ### Function used to stash local changes and update a branch passed to it
 def update_repo(repo, branch):
 	print "Attempting to stash any local changes..."
@@ -40,8 +49,32 @@ def update_repo(repo, branch):
 		print repo.git.stash('pop')
 
 ### Funtion to be used to check most recent commit date on the repo passed to it
-def check_repo(repo, branch):
-	local = repo.git.show(branch).split("\n")[2]
+def check_repo(repo):
+        branches = repo.git.branch('-r').split('\n')
+        branches = [x.lstrip(" ").strip("* ").replace("origin/","") for x in branches]
+        print "\nAvailable branches in "+str(repo).split("\"")[1]+":"
+	for i in enumerate(branches):
+		print "[%d] %s" % i
+	while (1):
+		try:
+			selection = int(raw_input("Enter the number of the branch you wish to update: "))
+		except ValueError:
+	    		print "Use the number!"
+			continue
+		try:
+			branch = branches[selection]
+		except:
+			print "Not a valid selection. Try again"
+			continue
+		break
+
+	try:
+		local = repo.git.show(branch).split("\n")[2]
+	except GitCommandError:
+		choice = raw_input("You have not previously checked out this branch. Would you like to do so now? [Y/n]: ")
+		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+			checkout_repo(repo, branch)
+			local = repo.git.show(branch).split("\n")[2]
 	if ("Date" not in local):
 		local = repo.git.show(branch).split("\n")[3]
 	remote = repo.git.show('origin/'+branch).split("\n")[2]
@@ -61,6 +94,7 @@ def check_repo(repo, branch):
 			update_repo(repo, branch)
 	else:
 		print "Your local version of "+reponame+" is good to go!"
+
 	
 print "####################################################"
 print "####                                            ####"
@@ -68,14 +102,9 @@ print "####      Welcome to the BrewPi Updater!        ####"
 print "####                                            ####"
 print "####################################################"
 print ""
-print ""
-print "Hitting Enter will accept the default settings (Best for most users)"
-print ""
-print "Most users will only want to update the master branch."
-branch = raw_input("What branch would you like to check? [master]: ")
-if branch is "":
-	branch = "master"
+print "Most users will want to select the 'master' choice at each of the following menus."
+branch = raw_input("Press enter to continue: ")
 
-check_repo( Repo('/var/www'), branch )
-check_repo( Repo('/home/brewpi'), branch )
+check_repo( Repo('/var/www') )
+check_repo( Repo('/home/brewpi') )
 
