@@ -51,6 +51,7 @@ def update_repo(repo, branch):
 ### Funtion to be used to check most recent commit date on the repo passed to it
 def check_repo(repo):
         branches = repo.git.branch('-r').split('\n')
+	branches.remove("  origin/HEAD -> origin/master")
         branches = [x.lstrip(" ").strip("* ").replace("origin/","") for x in branches]
         print "\nAvailable branches in "+str(repo).split("\"")[1]+":"
 	for i in enumerate(branches):
