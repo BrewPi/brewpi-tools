@@ -163,8 +163,15 @@ if [ "$(ls -A $installPath)" ]; then
   echo "Install directory is NOT empty, deleting..."
   sudo rm -rf $installPath/*||die
   sudo find $installPath/ -name '.*' | xargs rm -rf||die
-  sudo rm -rf $webPath/*||die
-  sudo find $webPath/ -name '.*' | xargs rm -rf||die
+fi
+if [ "$(ls -A $webPath)" ]; then
+  echo "Web directory is NOT empty, backing up to this users home dir and then deleting..."
+  dirName=$(date +%F-%k%M%S)
+  mkdir ~/$dirName
+  sudo mv /$webPath/* ~/$dirName
+  sudo mv /$webpath/.[^.]* ~/$dirName
+  #sudo rm -rf $webPath/*||die
+  #sudo find $webPath/ -name '.*' | xargs rm -rf||die
 fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
