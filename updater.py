@@ -29,24 +29,56 @@ def checkout_repo(repo, branch):
 		print "Failed. Ack! Quitting"
 	print "Success!"
 
+### Stash any local repo changes
+def stashChanges(repo):
+	stashed = False
+        print "Attempting to stash any changes..."
+        try:
+                resp = repo.git.stash()
+                print resp
+		stashed = True
+        except GitCommandError as e:
+                print e
+                print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
+		sys.exit()
+	return stashed
+
 ### Function used to stash local changes and update a branch passed to it
 def update_repo(repo, branch):
-	print "Attempting to stash any local changes..."
+	stashed = False
+	repo.git.fetch('origin', branch)
 	try:
-		resp = repo.git.stash()
-		print resp
-	except GitCommandError as e:
+		print repo.git.merge('origin/'+branch)
+	except GitCommandError,e: 
 		print e
-		print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
-		return
-	try:
-		print repo.git.pull('origin', branch)
-	except GitCommandError as e:
-		print "Error updating "+repo.git_dir
-		print e
-	if 'No local changes to save' not in resp:
-		print "Attempting to retrieve your local changes, cross your fingers..."
-		print repo.git.stash('pop')
+		if "Your local changes to the following files would be overwritten by merge" in str(e):
+			stashed = stashChanges(repo)			
+		print "Trying to merge again..."
+		try:
+			print repo.git.merge('origin/'+branch)
+		except GitCommandError,e:
+			print e
+			print "Sorry, local changes made are too complex. Aborting this branch update"
+			return	
+
+	if stashed:
+		print "##################################################################"
+		print "#Your local changes are in conflict with the last update of code.#"
+		print "##################################################################"
+		print "The conflict is:\n"
+		print "-------------------------------------------------------"
+		print  repo.git.stash("show", "--full-diff", "stash@{0}")
+                print "-------------------------------------------------------"
+		print ""
+		print  "Your changes are stashed for the moment, but if you don't care about them, I can discard them now. If I don't, you need to resolve this on your own, or you'll have issues updating BrewPi in the future."
+		choice = raw_input("Would you like me to discard your local changes causing this conflict? [Y/n]: ")
+		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+			for filename in repo.git.stash("show", "stash@{0}").split("\n")[:-1]:
+				repo.git.checkout("--theirs", filename.split("|")[0].strip())
+				repo.git.add(filename.split("|")[0].strip())
+				print "Discarded changes, merging again, just to be sure..."
+				print repo.git.merge('origin/'+branch)
+	print branch + " updated!"
 
 ### Funtion to be used to check most recent commit date on the repo passed to it
 def check_repo(repo):
@@ -106,6 +138,6 @@ print ""
 print "Most users will want to select the 'master' choice at each of the following menus."
 branch = raw_input("Press enter to continue: ")
 
-check_repo( Repo('/var/www') )
 check_repo( Repo('/home/brewpi') )
+check_repo( Repo('/var/www') )
 
