@@ -25,7 +25,7 @@ def checkout_repo(repo, branch):
 	print "Attempting to checkout "+branch
 	try:
 		repo.git.checkout(branch)
-	excepti GitCommandError as e: 
+	except GitCommandError as e: 
 		print e
 		print "Failed. Ack! Quitting"
 		sys.exit()
@@ -62,7 +62,7 @@ def update_repo(repo, branch):
 			print e
 			print "Sorry, local changes made are too complex. Aborting this branch update"
 			return	
-
+	
 	if stashed:
 		print "##################################################################"
 		print "#Your local changes are in conflict with the last update of code.#"
@@ -90,12 +90,15 @@ def check_repo(repo):
         print "\nAvailable branches in "+str(repo).split("\"")[1]+":"
 	for i in enumerate(branches):
 		print "[%d] %s" % i
+	print "["+str(len(branches))+"] Skip"
 	while (1):
 		try:
 			selection = int(raw_input("Enter the number of the branch you wish to update: "))
 		except ValueError:
 	    		print "Use the number!"
 			continue
+		if selection == len(branches):
+			return
 		try:
 			branch = branches[selection]
 		except:
@@ -103,6 +106,7 @@ def check_repo(repo):
 			continue
 		break
 
+	### See if the branch is part of local repo
 	try:
 		local = repo.git.show(branch).split("\n")[2]
 	except GitCommandError:
@@ -110,6 +114,26 @@ def check_repo(repo):
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
 			checkout_repo(repo, branch)
 			local = repo.git.show(branch).split("\n")[2]
+
+	### Check if branch is currently active, if not, prompt to check it out
+	branches = repo.git.branch()
+        for i in branches.split("\n"):
+                if "*" in i:
+                        curBranch = i
+                        break
+        if curBranch.strip("* ") != branch:
+                choice = raw_input("You chose "+branch+" but it is not your current active branch- would you like me to check it out for you now? (Required to continue) [Y/n]: ")
+                if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+                        try:
+                                print repo.git.checkout(branch)
+                                print "Successfully switched to "+branch
+                        except GitCommandError as e:
+                                print e
+                                print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
+		else:
+			print "Skipping this branch"
+			return
+
 	if ("Date" not in local):
 		local = repo.git.show(branch).split("\n")[3]
 	remote = repo.git.show('origin/'+branch).split("\n")[2]
