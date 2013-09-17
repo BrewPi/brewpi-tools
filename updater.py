@@ -25,8 +25,10 @@ def checkout_repo(repo, branch):
 	print "Attempting to checkout "+branch
 	try:
 		repo.git.checkout(branch)
-	except: 
+	excepti GitCommandError as e: 
+		print e
 		print "Failed. Ack! Quitting"
+		sys.exit()
 	print "Success!"
 
 ### Stash any local repo changes
@@ -68,7 +70,7 @@ def update_repo(repo, branch):
 		print "The conflict is:\n"
 		print "-------------------------------------------------------"
 		print  repo.git.stash("show", "--full-diff", "stash@{0}")
-                print "-------------------------------------------------------"
+		print "-------------------------------------------------------"
 		print ""
 		print  "Your changes are stashed for the moment, but if you don't care about them, I can discard them now. If I don't, you need to resolve this on your own, or you'll have issues updating BrewPi in the future."
 		choice = raw_input("Would you like me to discard your local changes causing this conflict? [Y/n]: ")
