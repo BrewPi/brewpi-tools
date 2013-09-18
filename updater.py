@@ -25,7 +25,7 @@ def checkout_repo(repo, branch):
 	print "Attempting to checkout "+branch
 	try:
 		repo.git.checkout(branch)
-	except GitCommandError as e: 
+	except GitCommandError, e: 
 		print e
 		print "Failed. Ack! Quitting"
 		sys.exit()
@@ -39,7 +39,7 @@ def stashChanges(repo):
                 resp = repo.git.stash()
                 print resp
 		stashed = True
-        except GitCommandError as e:
+        except GitCommandError, e:
                 print e
                 print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
 		sys.exit()
@@ -106,14 +106,6 @@ def check_repo(repo):
 			continue
 		break
 
-	### See if the branch is part of local repo
-	try:
-		local = repo.git.show(branch).split("\n")[2]
-	except GitCommandError:
-		choice = raw_input("You have not previously checked out this branch. Would you like to do so now? [Y/n]: ")
-		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-			checkout_repo(repo, branch)
-			local = repo.git.show(branch).split("\n")[2]
 
 	### Check if branch is currently active, if not, prompt to check it out
 	branches = repo.git.branch()
@@ -127,13 +119,22 @@ def check_repo(repo):
                         try:
                                 print repo.git.checkout(branch)
                                 print "Successfully switched to "+branch
-                        except GitCommandError as e:
-                                print e
-                                print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
+                        except GitCommandError, e:
+				if "Your local changes to the following files would be overwritten by checkout" in str(e):
+					print "Local changes exist in your current files that need to be stashed" 
+					stashed = stashChanges(repo)
+                			print "Trying to checkout again..."
+                		try:
+                        		print repo.git.checkout(branch)
+				except GitCommandError, e:
+					print e
+                                	print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
+					return
 		else:
 			print "Skipping this branch"
 			return
 
+	local = repo.git.show(branch).split("\n")[2]
 	if ("Date" not in local):
 		local = repo.git.show(branch).split("\n")[3]
 	remote = repo.git.show('origin/'+branch).split("\n")[2]
