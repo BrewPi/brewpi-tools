@@ -17,8 +17,17 @@
 
 ### Geo Van O, v0.9, Sep 2013
 
+from subprocess import *
 from git import *
 from time import strptime
+
+### fixPermissions.sh, Pythonized
+def fixPermissions():
+	check_call(["sudo", "chown", "-R", "brewpi:brewpi", "/home/brewpi"])
+	check_call(["sudo", "find", "/home/brewpi", "-type", "f", "-exec", "chmod",  "g+rwx", "{}", ";"])
+	check_call(["sudo", "find", "/home/brewpi", "-type", "d", "-exec", "chmod",  "g+rwxs", "{}", ";"])
+	check_call(["sudo", "find", "/var/www", "-type", "f", "-exec", "chmod",  "g+rwx", "{}", ";"])
+	check_call(["sudo", "find", "/var/www", "-type", "f", "-exec", "chmod",  "g+rwxs", "{}", ";"])
 
 ### Function used if requested branch has not been checked out
 def checkout_repo(repo, branch):
@@ -84,6 +93,7 @@ def update_repo(repo, branch):
 
 ### Funtion to be used to check most recent commit date on the repo passed to it
 def check_repo(repo):
+	changed = False
         branches = repo.git.branch('-r').split('\n')
 	branches.remove("  origin/HEAD -> origin/master")
         branches = [x.lstrip(" ").strip("* ").replace("origin/","") for x in branches]
@@ -152,10 +162,11 @@ def check_repo(repo):
 		choice = raw_input("Would you like to update this branch? [Y/n]: ")
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
 			update_repo(repo, branch)
+			changed = True
 	else:
 		print "Your local version of "+reponame+" is good to go!"
+	return changed
 
-	
 print "####################################################"
 print "####                                            ####"
 print "####      Welcome to the BrewPi Updater!        ####"
@@ -165,25 +176,34 @@ print ""
 print "Most users will want to select the 'master' choice at each of the following menus."
 branch = raw_input("Press enter to continue: ")
 
+changed = False
 try:
-	check_repo( Repo('/home/brewpi') )
+	changed = check_repo( Repo('/home/brewpi') )
 except:
 	print "I don't see BrewPi installed to the default path of /home/brewpi "
 	choice = raw_input("What path did you install BrewPi to? ")
 	try:
-		check_repo(Repo(choice)	
+		check_repo(Repo(choice))
 	except:
 		print "I don't see BrewPi there either. Aborting"
 		sys.exit()
-
+if changed: 
+	mod = True
 try:
 	check_repo( Repo('/var/www') )
 except:
         print "I don't see BrewPi web files installed to the default path of /var/www "
         choice = raw_input("What path did you install BrewPi web settigs to? ")
         try:
-                check_repo(Repo(choice)
+                changed = check_repo(Repo(choice))
         except:
                 print "I don't see BrewPi there either. Aborting"
                 sys.exit()
-
+if changed: 
+	mod = True
+if mod:
+	try:
+		print "Fixing permissions..." 
+		fixPermissions()
+	except:
+		print "I tried to fix permissions, but it failed. Try running it from the command line in your brewpi-script dir"
