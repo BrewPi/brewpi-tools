@@ -165,6 +165,25 @@ print ""
 print "Most users will want to select the 'master' choice at each of the following menus."
 branch = raw_input("Press enter to continue: ")
 
-check_repo( Repo('/home/brewpi') )
-check_repo( Repo('/var/www') )
+try:
+	check_repo( Repo('/home/brewpi') )
+except:
+	print "I don't see BrewPi installed to the default path of /home/brewpi "
+	choice = raw_input("What path did you install BrewPi to? ")
+	try:
+		check_repo(Repo(choice)	
+	except:
+		print "I don't see BrewPi there either. Aborting"
+		sys.exit()
+
+try:
+	check_repo( Repo('/var/www') )
+except:
+        print "I don't see BrewPi web files installed to the default path of /var/www "
+        choice = raw_input("What path did you install BrewPi web settigs to? ")
+        try:
+                check_repo(Repo(choice)
+        except:
+                print "I don't see BrewPi there either. Aborting"
+                sys.exit()
 
