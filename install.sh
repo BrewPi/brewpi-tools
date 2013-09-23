@@ -62,7 +62,7 @@ read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
 if [ -z "$installPath" ]; then
   installPath="/home/brewpi"
 else
-  case $installPath in
+  case "$installPath" in
     y | Y | yes | YES| Yes )
         echo "$installPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
         read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath;
@@ -75,9 +75,9 @@ else
 fi
 
 if [ -d "$installPath" ]; then
-  if [ "$(ls -A $installPath)" ]; then
+  if [ "$(ls -A ${installPath})" ]; then
     read -p "Install directory is NOT empty, are you SURE you want to use this path? [y/N] " yn
-    case $yn in
+    case "$yn" in
         y | Y | yes | YES| Yes ) echo "Ok, we warned you!";;
         * ) exit;;
     esac
@@ -88,8 +88,8 @@ else
     if [ -z "$yn" ]; then
       yn="y"
     fi
-    case $yn in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir $installPath;;
+    case "$yn" in
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir "$installPath";;
         * ) echo "Aborting..."; exit;;
     esac
   fi
@@ -101,7 +101,7 @@ read -p "What is the path to your web directory? [/var/www]: " webPath
 if [ -z "$webPath" ]; then
   webPath="/var/www"
 else
-  case $webPath in
+  case "$webPath" in
     y | Y | yes | YES| Yes )
         echo "$webPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
         read -p "What is the path to your web directory? [/var/www]: " webPath
@@ -114,9 +114,9 @@ else
 fi
 
 if [ -d "$webPath" ]; then
-  if [ "$(ls -A $webPath)" ]; then
+  if [ "$(ls -A ${webPath})" ]; then
     read -p "Web directory is NOT empty, are you SURE you want to use this path? [y/N] " yn
-    case $yn in
+    case "$yn" in
         y | Y | yes | YES| Yes ) echo "Ok, we warned you!";;
         * ) exit;;
     esac
@@ -127,26 +127,30 @@ else
     if [ -z "$yn" ]; then
       yn="y"
     fi
-    case $yn in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir $webPath;;
+    case "$yn" in
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir "$webPath";;
         * ) echo "Aborting..."; exit;;
     esac
   fi
 fi
 
-GLOBIGNORE=$installPath/.:$installPath/..
+GLOBIGNORE="$installPath/.:$installPath/.."
 
 ############
-### Install required packages
+### Install git if not found. Other dependencies are installed later by script in repo
 ############
-sudo apt-get update
-sudo apt-get install -y rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die
+if ! dpkg-query -W git; then
+    echo "git not found, installing git..."
+    sudo apt-get update
+    sudo apt-get install -y git-core||die
+fi
+
 
 ############
 ### Create/configure user accounts
 ############
 echo "Creating and configuring user accounts..."
-sudo chown -R www-data:www-data $webPath||die
+sudo chown -R www-data:www-data "$webPath"||die
 if id -u brewpi >/dev/null 2>&1; then
   echo "User 'brewpi' already exists, skipping..."
 else
@@ -157,47 +161,37 @@ fi
 if [ -d "$installPath" ]; then
   echo "$installPath already exists"
 else
-  sudo mkdir $installPath
+  sudo mkdir "$installPath"
 fi
-if [ "$(ls -A $installPath)" ]; then
+if [ "$(ls -A ${installPath})" ]; then
   echo "Install directory is NOT empty, deleting..."
-  sudo -u brewpi rm -rf $installPath/*||die
+  sudo -u brewpi rm -rf "$installPath/*"||die
 fi
 sudo usermod -a -G www-data pi||die
 sudo usermod -a -G brewpi pi||die
-sudo chown -R www-data:www-data $webPath||die
-sudo chown -R brewpi:brewpi $installPath||die
+sudo chown -R www-data:www-data "$webPath"||die
+sudo chown -R brewpi:brewpi "$installPath"||die
 
 ############
 ### Set sticky bit! nom nom nom
 ############
-sudo find $installPath -type f -exec chmod g+rwx {} \;||die
-sudo find $installpath -type d -exec chmod g+rwxs {} \;||die
-sudo find $webPath -type d -exec chmod g+rwxs {} \;||die
-sudo find $webPath -type f -exec chmod g+rwx {} \;||die
+sudo find "$installPath" -type d -exec chmod g+rwxs {} \;||die
+sudo find "$webPath" -type d -exec chmod g+rwxs {} \;||die
 
 ############
 ### Clone BrewPi repositories
 ############
 echo "Downloading most recent BrewPi codebase..."
-sudo rm -rf $installPath/*||die
-sudo find $installPath/ -name '.*' | xargs rm -rf||die
-sudo rm -rf $webPath/*||die
-sudo find $webPath/ -name '.*' | xargs rm -rf||die
-sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script $installPath||die
-sudo -u www-data git clone https://github.com/BrewPi/brewpi-www $webPath||die
+sudo rm -rf "$installPath"/*||die
+sudo find "$installPath/" -name '.*' | xargs rm -rf||die
+sudo rm -rf "$webPath"/*||die
+sudo find "$webPath/" -name '.*' | xargs rm -rf||die
+sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
+sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
-echo "Fixing file permissions after git clone, with sh $installPath/fixPremssions.sh"
-sudo sh $installPath/fixPermissions.sh
-
-############
-### Install Web Crontab
-############
-sudo -u brewpi crontab -l > /tmp/tempcron
-sudo -u brewpi echo -e "* * * * * python -u $installPath/brewpi.py --dontrunfile 1>$installPath/logs/stdout.txt 2>>$installPath/logs/stderr.txt &" >> /tmp/tempcron||die||die
-echo -e "Installing BrewPi www crontab..."
-sudo -u brewpi crontab /tmp/tempcron||die
-rm /tmp/tempcron||die
+echo "Installing/fixing dependencies, with bash $installPath/installDependencies.sh\n"
+echo "You can re-run this file after manually switching branches to update required dependencies.\n"
+sudo bash "$installPath/installDependencies.sh"
 
 ############
 ### Check for insecure SSH key
