@@ -149,7 +149,7 @@ fi
 ############
 ### Create/configure user accounts
 ############
-echo "Creating and configuring user accounts..."
+echo -e "\n***** Creating and configuring user accounts... *****"
 sudo chown -R www-data:www-data "$webPath"||die
 if id -u brewpi >/dev/null 2>&1; then
   echo "User 'brewpi' already exists, skipping..."
@@ -157,6 +157,11 @@ else
   sudo useradd -G www-data,dialout brewpi||die
   echo -e "brewpi\nbrewpi\n" | sudo passwd brewpi||die
 fi
+# add pi user to brewpi and www-data group
+sudo usermod -a -G www-data pi||die
+sudo usermod -a -G brewpi pi||die
+
+echo -e "\n***** Checking install directories *****"
 
 if [ -d "$installPath" ]; then
   echo "$installPath already exists"
@@ -164,11 +169,22 @@ else
   sudo mkdir "$installPath"
 fi
 if [ "$(ls -A ${installPath})" ]; then
-  echo "Install directory is NOT empty, deleting..."
-  sudo -u brewpi rm -rf "$installPath/*"||die
+  echo "Script install directory is NOT empty, deleting contents..."
+    sudo rm -rf "$installPath"/*||die
+    sudo find "$installPath/" -name '.*' | xargs rm -rf||die
 fi
-sudo usermod -a -G www-data pi||die
-sudo usermod -a -G brewpi pi||die
+
+if [ -d "$webPath" ]; then
+  echo "$webPath already exists"
+else
+  sudo mkdir "$webPath"
+fi
+if [ "$(ls -A ${webPath})" ]; then
+  echo "Web interface install directory is NOT empty, deleting contents..."
+    sudo rm -rf "$webPath"/*||die
+    sudo find "$webPath/" -name '.*' | xargs rm -rf||die
+fi
+
 sudo chown -R www-data:www-data "$webPath"||die
 sudo chown -R brewpi:brewpi "$installPath"||die
 
@@ -181,17 +197,18 @@ sudo find "$webPath" -type d -exec chmod g+rwxs {} \;||die
 ############
 ### Clone BrewPi repositories
 ############
-echo "Downloading most recent BrewPi codebase..."
-sudo rm -rf "$installPath"/*||die
-sudo find "$installPath/" -name '.*' | xargs rm -rf||die
-sudo rm -rf "$webPath"/*||die
-sudo find "$webPath/" -name '.*' | xargs rm -rf||die
+echo -e "\n***** Downloading most recent BrewPi codebase... *****"
+
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
-echo "Installing/fixing dependencies, with bash $installPath/installDependencies.sh\n"
-echo "You can re-run this file after manually switching branches to update required dependencies.\n"
-sudo bash "$installPath/installDependencies.sh"
+echo -e "\n***** Installing/fixing dependencies, with bash $installPath/installDependencies.sh *****"
+echo "You can re-run this file after manually switching branches to update required dependencies."
+if [ -a "$installPath/installDependencies.sh" ]; then
+   sudo bash "$installPath/installDependencies.sh"
+else
+   echo "Could not find installDependencies.sh!"
+fi
 
 ############
 ### Check for insecure SSH key
