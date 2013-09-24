@@ -134,12 +134,11 @@ else
   fi
 fi
 
-GLOBIGNORE="$installPath/.:$installPath/.."
 
 ############
 ### Install git if not found. Other dependencies are installed later by script in repo
 ############
-if ! dpkg-query -W git; then
+if ! dpkg-query -W git > /dev/null; then
     echo "git not found, installing git..."
     sudo apt-get update
     sudo apt-get install -y git-core||die
@@ -168,10 +167,17 @@ if [ -d "$installPath" ]; then
 else
   sudo mkdir "$installPath"
 fi
+
+dirName=$(date +%F-%k:%M:%S)
 if [ "$(ls -A ${installPath})" ]; then
-  echo "Script install directory is NOT empty, deleting contents..."
+  echo "Script install directory is NOT empty, backing up to this users home dir and then deleting contents..."
+    if ! [ -a ~/brewpi-backup/ ]; then
+      mkdir ~/brewpi-backup
+    fi
+    mkdir ~/brewpi-backup/"$dirName"
+    sudo cp -R "$installPath" ~/brewpi-backup/"$dirName"/||die
     sudo rm -rf "$installPath"/*||die
-    sudo find "$installPath/" -name '.*' | xargs rm -rf||die
+    sudo find "$installPath"/ -name '.*' | sudo xargs rm -rf||die
 fi
 
 if [ -d "$webPath" ]; then
@@ -181,11 +187,15 @@ else
 fi
 if [ "$(ls -A ${webPath})" ]; then
   echo "Web directory is NOT empty, backing up to this users home dir and then deleting contents..."
-  dirName=$(date +%F-%k%M%S)
-  mkdir ~/$dirName
-  sudo cp -R /$webPath/* ~/$dirName||die
+  if ! [ -a ~/brewpi-backup/ ]; then
+    mkdir ~/brewpi-backup
+  fi
+  if ! [ -a ~/brewpi-backup/"$dirName"/ ]; then
+    mkdir ~/brewpi-backup/"$dirName"
+  fi
+  sudo cp -R "$webPath" ~/brewpi-backup/"$dirName"/||die
   sudo rm -rf "$webPath"/*||die
-  sudo find "$webPath/" -name '.*' | xargs rm -rf||die
+  sudo find "$webPath"/ -name '.*' | sudo xargs rm -rf||die
 fi
 
 sudo chown -R www-data:www-data "$webPath"||die
@@ -209,8 +219,8 @@ sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 ############
 echo -e "\n***** Installing/fixing dependencies, with bash $installPath/installDependencies.sh *****"
 echo "You can re-run this file after manually switching branches to update required dependencies."
-if [ -a "$installPath/installDependencies.sh" ]; then
-   sudo bash "$installPath/installDependencies.sh"
+if [ -a "$installPath"/installDependencies.sh ]; then
+   sudo bash "$installPath"/installDependencies.sh
 else
    echo "Could not find installDependencies.sh!"
 fi
