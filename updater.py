@@ -20,58 +20,59 @@
 from subprocess import *
 from git import *
 from time import strptime
+import sys
 
-### fixPermissions.sh, Pythonized
-def fixPermissions():
-	check_call(["sudo", "chown", "-R", "brewpi:brewpi", "/home/brewpi"])
-	check_call(["sudo", "find", "/home/brewpi", "-type", "f", "-exec", "chmod",  "g+rwx", "{}", ";"])
-	check_call(["sudo", "find", "/home/brewpi", "-type", "d", "-exec", "chmod",  "g+rwxs", "{}", ";"])
-	check_call(["sudo", "find", "/var/www", "-type", "f", "-exec", "chmod",  "g+rwx", "{}", ";"])
-	check_call(["sudo", "find", "/var/www", "-type", "f", "-exec", "chmod",  "g+rwxs", "{}", ";"])
+
+### call installDependencies.sh, so commands are only defined in one place.
+def installDependencies(scriptDir):
+	check_call(["sudo", "bash", scriptDir + "/installDependencies.sh"])
+
 
 ### Function used if requested branch has not been checked out
 def checkout_repo(repo, branch):
 	print "Attempting to checkout "+branch
 	try:
 		repo.git.checkout(branch)
-	except GitCommandError, e: 
+	except GitCommandError, e:
 		print e
 		print "Failed. Ack! Quitting"
 		sys.exit()
 	print "Success!"
 
+
 ### Stash any local repo changes
 def stashChanges(repo):
 	stashed = False
-        print "Attempting to stash any changes..."
-        try:
-                resp = repo.git.stash()
-                print resp
+	print "Attempting to stash any changes..."
+	try:
+		resp = repo.git.stash()
+		print resp
 		stashed = True
-        except GitCommandError, e:
-                print e
-                print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
+	except GitCommandError, e:
+		print e
+		print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
 		sys.exit()
 	return stashed
+
 
 ### Function used to stash local changes and update a branch passed to it
 def update_repo(repo, branch):
 	stashed = False
 	repo.git.fetch('origin', branch)
 	try:
-		print repo.git.merge('origin/'+branch)
-	except GitCommandError,e: 
+		print repo.git.merge('origin/' + branch)
+	except GitCommandError, e:
 		print e
 		if "Your local changes to the following files would be overwritten by merge" in str(e):
-			stashed = stashChanges(repo)			
+			stashed = stashChanges(repo)
 		print "Trying to merge again..."
 		try:
-			print repo.git.merge('origin/'+branch)
-		except GitCommandError,e:
+			print repo.git.merge('origin/' + branch)
+		except GitCommandError, e:
 			print e
 			print "Sorry, local changes made are too complex. Aborting this branch update"
-			return	
-	
+			return
+
 	if stashed:
 		print "##################################################################"
 		print "#Your local changes are in conflict with the last update of code.#"
@@ -81,34 +82,37 @@ def update_repo(repo, branch):
 		print  repo.git.stash("show", "--full-diff", "stash@{0}")
 		print "-------------------------------------------------------"
 		print ""
-		print  "Your changes are stashed for the moment, but if you don't care about them, I can discard them now. If I don't, you need to resolve this on your own, or you'll have issues updating BrewPi in the future."
+		print  ("Your changes are stashed for the moment, but if you don't care about them, I can discard them now." +
+		       "If I don't, you need to resolve this on your own, or you'll have issues updating BrewPi in the future.")
 		choice = raw_input("Would you like me to discard your local changes causing this conflict? [Y/n]: ")
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
 			for filename in repo.git.stash("show", "stash@{0}").split("\n")[:-1]:
 				repo.git.checkout("--theirs", filename.split("|")[0].strip())
 				repo.git.add(filename.split("|")[0].strip())
 				print "Discarded changes, merging again, just to be sure..."
-				print repo.git.merge('origin/'+branch)
+				print repo.git.merge('origin/' + branch)
 	print branch + " updated!"
 
-### Funtion to be used to check most recent commit date on the repo passed to it
+### Function to be used to check most recent commit date on the repo passed to it
 def check_repo(repo):
-	changed = False
-        branches = repo.git.branch('-r').split('\n')
+	repoChanged = False
+	curBranch = ""
+	branch = ""
+	branches = repo.git.branch('-r').split('\n')
 	branches.remove("  origin/HEAD -> origin/master")
-        branches = [x.lstrip(" ").strip("* ").replace("origin/","") for x in branches]
-        print "\nAvailable branches in "+str(repo).split("\"")[1]+":"
+	branches = [x.lstrip(" ").strip("* ").replace("origin/", "") for x in branches]
+	print "\nAvailable branches in " + str(repo).split("\"")[1] + ":"
 	for i in enumerate(branches):
 		print "[%d] %s" % i
-	print "["+str(len(branches))+"] Skip"
-	while (1):
+	print "[" + str(len(branches)) + "] Skip"
+	while 1:
 		try:
 			selection = int(raw_input("Enter the number of the branch you wish to update: "))
 		except ValueError:
-	    		print "Use the number!"
+			print "Use the number!"
 			continue
 		if selection == len(branches):
-			return
+			return False
 		try:
 			branch = branches[selection]
 		except:
@@ -116,56 +120,57 @@ def check_repo(repo):
 			continue
 		break
 
-
 	### Check if branch is currently active, if not, prompt to check it out
 	branches = repo.git.branch()
-        for i in branches.split("\n"):
-                if "*" in i:
-                        curBranch = i
-                        break
-        if curBranch.strip("* ") != branch:
-                choice = raw_input("You chose "+branch+" but it is not your current active branch- would you like me to check it out for you now? (Required to continue) [Y/n]: ")
-                if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-                        try:
-                                print repo.git.checkout(branch)
-                                print "Successfully switched to "+branch
-                        except GitCommandError, e:
+	for i in branches.split("\n"):
+		if "*" in i:
+			curBranch = i
+			break
+	if curBranch.strip("* ") != branch:
+		choice = raw_input("You chose " + branch + " but it is not your current active branch- " +
+		                   "would you like me to check it out for you now? (Required to continue) [Y/n]: ")
+		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+			try:
+				print repo.git.checkout(branch)
+				print "Successfully switched to " + branch
+				repoChanged = True
+			except GitCommandError, e:
 				if "Your local changes to the following files would be overwritten by checkout" in str(e):
-					print "Local changes exist in your current files that need to be stashed" 
+					print "Local changes exist in your current files that need to be stashed"
 					stashed = stashChanges(repo)
-                			print "Trying to checkout again..."
-                		try:
-                        		print repo.git.checkout(branch)
+					print "Trying to checkout again..."
+				try:
+					print repo.git.checkout(branch)
 				except GitCommandError, e:
 					print e
-                                	print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
-					return
+					print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
+					return False
 		else:
 			print "Skipping this branch"
-			return
+			return False
 
 	local = repo.git.show(branch).split("\n")[2]
-	if ("Date" not in local):
+	if "Date" not in local:
 		local = repo.git.show(branch).split("\n")[3]
-	remote = repo.git.show('origin/'+branch).split("\n")[2]
-	if ("Date" not in remote):
-		remote = repo.git.show('origin/'+branch).split("\n")[3]
+	remote = repo.git.show('origin/' + branch).split("\n")[2]
+	if "Date" not in remote:
+		remote = repo.git.show('origin/' + branch).split("\n")[3]
 	reponame = repo.git.remote('-v').split(":")[1].split()[0]
-	localdate = strptime(local[8:-6],"%a %b %d %H:%M:%S %Y")
-	remotedate = strptime(remote[8:-6],"%a %b %d %H:%M:%S %Y")
+	localdate = strptime(local[8:-6], "%a %b %d %H:%M:%S %Y")
+	remotedate = strptime(remote[8:-6], "%a %b %d %H:%M:%S %Y")
 
-	print "\nChecking for updates on "+reponame+", branch "+branch
-	print "Your local copy of "+reponame+" is current as of: "+local
-	print "The most current version of BrewPi for this branch is "+remote
+	print "\nChecking for updates on " + reponame+", branch " + branch
+	print "Your local copy of " + reponame + " is current as of: " + local
+	print "The most current version of BrewPi for this branch is " + remote
 	if localdate < remotedate:
-		print "*** Your local version of "+reponame+" is out of date."
+		print "*** Your local version of " + reponame + " is out of date."
 		choice = raw_input("Would you like to update this branch? [Y/n]: ")
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
 			update_repo(repo, branch)
-			changed = True
+			repoChanged = True
 	else:
-		print "Your local version of "+reponame+" is good to go!"
-	return changed
+		print "Your local version of " + reponame + " is good to go!"
+	return repoChanged
 
 print "####################################################"
 print "####                                            ####"
@@ -177,8 +182,9 @@ print "Most users will want to select the 'master' choice at each of the followi
 branch = raw_input("Press enter to continue: ")
 
 changed = False
+
 try:
-	changed = check_repo( Repo('/home/brewpi') )
+	changed = check_repo(Repo('/home/brewpi')) or changed
 except:
 	print "I don't see BrewPi installed to the default path of /home/brewpi "
 	choice = raw_input("What path did you install BrewPi to? ")
@@ -187,23 +193,21 @@ except:
 	except:
 		print "I don't see BrewPi there either. Aborting"
 		sys.exit()
-if changed: 
-	mod = True
+
 try:
-	check_repo( Repo('/var/www') )
+	changed = check_repo(Repo('/var/www')) or changed
 except:
-        print "I don't see BrewPi web files installed to the default path of /var/www "
-        choice = raw_input("What path did you install BrewPi web settigs to? ")
-        try:
-                changed = check_repo(Repo(choice))
-        except:
-                print "I don't see BrewPi there either. Aborting"
-                sys.exit()
-if changed: 
-	mod = True
-if mod:
+	print "I don't see BrewPi web files installed to the default path of /var/www "
+	choice = raw_input("What path did you install BrewPi web settings to? ")
 	try:
-		print "Fixing permissions..." 
-		fixPermissions()
+		changed = changed or check_repo(Repo(choice))
 	except:
-		print "I tried to fix permissions, but it failed. Try running it from the command line in your brewpi-script dir"
+		print "I don't see BrewPi there either. Aborting"
+		sys.exit()
+if changed:
+	try:
+		print "Installing dependencies and fixing permissions..."
+		installDependencies("/home/brewpi")
+	except:
+		print "I tried to execute the installDependencies.sh bash script, but it failed. " +\
+		      "Try running it from the command line in your brewpi-script dir"
