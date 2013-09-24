@@ -96,6 +96,7 @@ def update_repo(repo, branch):
 ### Function to be used to check most recent commit date on the repo passed to it
 def check_repo(repo):
 	repoChanged = False
+	repo.git.fetch()
 	curBranch = ""
 	branch = ""
 	branches = repo.git.branch('-r').split('\n')
