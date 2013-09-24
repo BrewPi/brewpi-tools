@@ -180,9 +180,12 @@ else
   sudo mkdir "$webPath"
 fi
 if [ "$(ls -A ${webPath})" ]; then
-  echo "Web interface install directory is NOT empty, deleting contents..."
-    sudo rm -rf "$webPath"/*||die
-    sudo find "$webPath/" -name '.*' | xargs rm -rf||die
+  echo "Web directory is NOT empty, backing up to this users home dir and then deleting contents..."
+  dirName=$(date +%F-%k%M%S)
+  mkdir ~/$dirName
+  sudo cp -R /$webPath/* ~/$dirName||die
+  sudo rm -rf "$webPath"/*||die
+  sudo find "$webPath/" -name '.*' | xargs rm -rf||die
 fi
 
 sudo chown -R www-data:www-data "$webPath"||die
@@ -198,10 +201,12 @@ sudo find "$webPath" -type d -exec chmod g+rwxs {} \;||die
 ### Clone BrewPi repositories
 ############
 echo -e "\n***** Downloading most recent BrewPi codebase... *****"
-
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
+############
+### Run installDependencies script from repo.
+############
 echo -e "\n***** Installing/fixing dependencies, with bash $installPath/installDependencies.sh *****"
 echo "You can re-run this file after manually switching branches to update required dependencies."
 if [ -a "$installPath/installDependencies.sh" ]; then
