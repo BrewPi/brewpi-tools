@@ -60,8 +60,9 @@ def stashChanges(repo):
 	except git.GitCommandError, e:
 		print e
 		print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
-		sys.exit()
-	return stashed
+		stashed = False
+	finally:
+		return stashed
 
 
 ### Function used to stash local changes and update a branch passed to it
@@ -73,7 +74,8 @@ def update_repo(repo, branch):
 	except git.GitCommandError, e:
 		print e
 		if "Your local changes to the following files would be overwritten by merge" in str(e):
-			stashed = stashChanges(repo)
+			if not stashChanges(repo):
+				return
 		print "Trying to merge again..."
 		try:
 			print repo.git.merge('origin/' + branch)
@@ -97,7 +99,7 @@ def update_repo(repo, branch):
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
 			for filename in repo.git.stash("show", "stash@{0}").split("\n")[:-1]:
 				repo.git.checkout("--theirs", filename.split("|")[0].strip())
-				repo.git.add(filename.split("|")[0].strip())
+				repo.git.add(filename.split("|")[0].strip(), force=True)
 				print "Discarded changes, merging again, just to be sure..."
 				print repo.git.merge('origin/' + branch)
 	print branch + " updated!"
@@ -148,7 +150,8 @@ def check_repo(repo):
 			except git.GitCommandError, e:
 				if "Your local changes to the following files would be overwritten by checkout" in str(e):
 					print "Local changes exist in your current files that need to be stashed"
-					stashed = stashChanges(repo)
+					if not stashChanges(repo):
+						return
 					print "Trying to checkout again..."
 				try:
 					print repo.git.checkout(branch)
