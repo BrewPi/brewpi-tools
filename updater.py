@@ -29,7 +29,12 @@ except ImportError:
 
 ### call installDependencies.sh, so commands are only defined in one place.
 def installDependencies(scriptDir):
-	subprocess.check_call(["sudo", "bash", scriptDir + "/installDependencies.sh"])
+	try:
+		print "Installing dependencies and fixing permissions..."
+		subprocess.check_call(["sudo", "bash", scriptDir + "/installDependencies.sh"], stderr=subprocess.STDOUT)
+	except subprocess.CalledProcessError as e:
+		print "I tried to execute the installDependencies.sh bash script, an error occurred. " + \
+		      "Try running it from the command line in your brewpi-script dir"
 
 
 ### Function used if requested branch has not been checked out
@@ -121,7 +126,7 @@ def check_repo(repo):
 			return False
 		try:
 			branch = branches[selection]
-		except:
+		except IndexError:
 			print "Not a valid selection. Try again"
 			continue
 		break
@@ -188,32 +193,38 @@ print "Most users will want to select the 'master' choice at each of the followi
 branch = raw_input("Press enter to continue: ")
 
 changed = False
+scriptPath = '/home/brewpi'
+webPath = '/var/www'
 
-try:
-	changed = check_repo(git.Repo('/home/brewpi')) or changed
-except:
-	print "I don't see BrewPi installed to the default path of /home/brewpi "
-	choice = raw_input("What path did you install BrewPi to? ")
+for i in range(3):
 	try:
-		check_repo(git.Repo(choice))
-	except:
-		print "I don't see BrewPi there either. Aborting"
-		sys.exit()
+		changed = check_repo(git.Repo(scriptPath)) or changed
+	except git.NoSuchPathError:
+		print "The path %s does not exist" % scriptPath
+		choice = raw_input("What path did you install the BrewPi python scripts to? ")
+	except git.InvalidGitRepositoryError:
+		print "The path %s does not seem to be a valid git repository" % scriptPath
+		choice = raw_input("What path did you install the BrewPi python scripts to? ")
+	else:
+		break
+else:
+	print "Maximum number of tries reached, updating BrewPi scripts aborted"
 
-try:
-	changed = check_repo(git.Repo('/var/www')) or changed
-except:
-	print "I don't see BrewPi web files installed to the default path of /var/www "
-	choice = raw_input("What path did you install BrewPi web settings to? ")
+for i in range(3):
 	try:
-		changed = changed or check_repo(git.Repo(choice))
-	except:
-		print "I don't see BrewPi there either. Aborting"
-		sys.exit()
+		changed = check_repo(git.Repo(webPath)) or changed
+	except git.NoSuchPathError:
+		print "The path %s does not exist" % scriptPath
+		choice = raw_input("What path did you install the BrewPi web interface scripts to? ")
+	except git.InvalidGitRepositoryError:
+		print "The path %s does not seem to be a valid git repository" % webPath
+		choice = raw_input("What path did you install the BrewPi python scripts to? ")
+	else:
+		break;
+else:
+	print "Maximum number of tries reached, updating BrewPi web interface aborted"
+
 if changed:
-	try:
-		print "Installing dependencies and fixing permissions..."
-		installDependencies("/home/brewpi")
-	except:
-		print "I tried to execute the installDependencies.sh bash script, but it failed. " +\
-		      "Try running it from the command line in your brewpi-script dir"
+	installDependencies(scriptPath)
+
+print "Done updating BrewPi!"
