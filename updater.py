@@ -18,9 +18,13 @@
 ### Geo Van O, v0.9, Sep 2013
 
 import subprocess
-import git
 from time import strptime
 import sys
+try:
+	import git
+except ImportError:
+	print "This update script requires python-git, please install it with 'sudo apt-get install python-git"
+	sys.exit(1)
 
 
 ### call installDependencies.sh, so commands are only defined in one place.
