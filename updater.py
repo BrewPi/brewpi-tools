@@ -52,17 +52,22 @@ def checkout_repo(repo, branch):
 ### Stash any local repo changes
 def stashChanges(repo):
 	stashed = False
-	print "Attempting to stash any changes..."
-	try:
-		resp = repo.git.stash()
-		print resp
-		stashed = True
-	except git.GitCommandError, e:
-		print e
-		print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
-		stashed = False
-	finally:
-		return stashed
+	choice = raw_input("Would you like to stash local changes? (Required to continue) [Y/n]: ")
+	if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+		print "Attempting to stash any changes..."
+		try:
+			resp = repo.git.stash()
+			print resp
+			stashed = True
+		except git.GitCommandError, e:
+			print e
+			print "Unable to stash, don't want to overwrite your stuff, aborting this branch update"
+			stashed = False
+		finally:
+			return stashed
+	else:
+		print "Changes are not stashed, cannot continue without stashing. Aborting update"
+		return False
 
 
 ### Function used to stash local changes and update a branch passed to it
@@ -149,12 +154,13 @@ def check_repo(repo):
 				repoChanged = True
 			except git.GitCommandError, e:
 				if "Your local changes to the following files would be overwritten by checkout" in str(e):
-					print "Local changes exist in your current files that need to be stashed"
+					print "Local changes exist in your current files that need to be stashed to continue"
 					if not stashChanges(repo):
 						return
 					print "Trying to checkout again..."
 				try:
 					print repo.git.checkout(branch)
+					print "Checkout successful"
 				except git.GitCommandError, e:
 					print e
 					print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
