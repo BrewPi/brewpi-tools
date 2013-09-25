@@ -80,14 +80,14 @@ def update_repo(repo, branch):
 		print e
 		if "Your local changes to the following files would be overwritten by merge" in str(e):
 			if not stashChanges(repo):
-				return
+				return False
 		print "Trying to merge again..."
 		try:
 			print repo.git.merge('origin/' + branch)
 		except git.GitCommandError, e:
 			print e
-			print "Sorry, local changes made are too complex. Aborting this branch update"
-			return
+			print "Sorry, cannot automatically stash/discard local changes. Aborting"
+			return False
 
 	if stashed:
 		print "##################################################################"
@@ -102,17 +102,29 @@ def update_repo(repo, branch):
 		       "If I don't, you need to resolve this on your own, or you'll have issues updating BrewPi in the future.")
 		choice = raw_input("Would you like me to discard your local changes causing this conflict? [Y/n]: ")
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-			for filename in repo.git.stash("show", "stash@{0}").split("\n")[:-1]:
-				repo.git.checkout("--theirs", filename.split("|")[0].strip())
-				repo.git.add(filename.split("|")[0].strip(), force=True)
-				print "Discarded changes, merging again, just to be sure..."
+			try:
+				for filename in repo.git.stash("show", "stash@{0}").split("\n")[:-1]:
+					repo.git.checkout("--theirs", filename.split("|")[0].strip())
+					repo.git.add(filename.split("|")[0].strip(), force=True)
+			except git.GitCommandError, e:
+				print e
+				print "An error occurred while trying to discard the changes. Aborting update"
+				return False
+
+			print "Discarded changes, merging again, just to be sure..."
+			try:
 				print repo.git.merge('origin/' + branch)
+			except git.GitCommandError, e:
+				print e
+				print "An error occurred while merging. Aborting update"
+				return False
 	print branch + " updated!"
+	return True
 
 
 ### Function to be used to check most recent commit date on the repo passed to it
 def check_repo(repo):
-	repoChanged = False
+	updated = False
 	repo.git.fetch("--prune")
 	curBranch = ""
 	branch = ""
@@ -161,7 +173,7 @@ def check_repo(repo):
 			try:
 				print repo.git.checkout(branch)
 				print "Successfully switched to " + branch
-				repoChanged = True
+				updated = True
 			except git.GitCommandError, e:
 				if "Your local changes to the following files would be overwritten by checkout" in str(e):
 					print "Local changes exist in your current files that need to be stashed to continue"
@@ -196,11 +208,10 @@ def check_repo(repo):
 		print "*** Your local version of " + repoName + " is out of date."
 		choice = raw_input("Would you like to update this branch? [Y/n]: ")
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-			update_repo(repo, branch)
-			repoChanged = True
+			updated = update_repo(repo, branch)
 	else:
 		print "Your local version of " + repoName + " is good to go!"
-	return repoChanged
+	return updated
 
 print "####################################################"
 print "####                                            ####"
