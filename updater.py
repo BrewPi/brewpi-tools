@@ -116,6 +116,16 @@ def check_repo(repo):
 	repo.git.fetch("--prune")
 	curBranch = ""
 	branch = ""
+
+	### Check if branch is currently active, if not, prompt to check it out
+	branches = repo.git.branch()
+	for i in branches.split("\n"):
+		if "*" in i:
+			curBranch = i.strip("* ")
+			break
+	print "You are currently on branch " + curBranch
+
+	### Get available branches on the remote
 	branches = repo.git.branch('-r').split('\n')
 	branches.remove("  origin/HEAD -> origin/master")
 	branches = [x.lstrip(" ").strip("* ").replace("origin/", "") for x in branches]
@@ -125,7 +135,13 @@ def check_repo(repo):
 	print "[" + str(len(branches)) + "] Skip"
 	while 1:
 		try:
-			selection = int(raw_input("Enter the number of the branch you wish to update: "))
+			choice = raw_input("Enter the number of the branch you wish to update [%s]:" % curBranch)
+			if choice == "":
+				print "Keeping current branch %s" % curBranch
+				branch = curBranch
+				break
+			else:
+				selection = int(choice)
 		except ValueError:
 			print "Use the number!"
 			continue
@@ -138,13 +154,7 @@ def check_repo(repo):
 			continue
 		break
 
-	### Check if branch is currently active, if not, prompt to check it out
-	branches = repo.git.branch()
-	for i in branches.split("\n"):
-		if "*" in i:
-			curBranch = i
-			break
-	if curBranch.strip("* ") != branch:
+	if curBranch != branch:
 		choice = raw_input("You chose " + branch + " but it is not your current active branch- " +
 		                   "would you like me to check it out for you now? (Required to continue) [Y/n]: ")
 		if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
@@ -205,6 +215,7 @@ changed = False
 scriptPath = '/home/brewpi'
 webPath = '/var/www'
 
+print "Updating BrewPi script repository"
 for i in range(3):
 	try:
 		changed = check_repo(git.Repo(scriptPath)) or changed
@@ -219,6 +230,7 @@ for i in range(3):
 else:
 	print "Maximum number of tries reached, updating BrewPi scripts aborted"
 
+print "Updating BrewPi web interface repository"
 for i in range(3):
 	try:
 		changed = check_repo(git.Repo(webPath)) or changed
