@@ -56,6 +56,18 @@ else
     echo "Disk usage is $free_percentage, free disk space is $free_readable. Enough to install BrewPi"
 fi
 
+date=$(date)
+read -p "The time is currently set to $date. Is this correct? [Y/n]" choice
+case "$choice" in
+  n | N | no | NO | No )
+    sudo dpkg-reconfigure tzdata;;
+  * )
+esac
+
+
+############
+### Now for the install!
+############
 
 echo "Any data in the following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
