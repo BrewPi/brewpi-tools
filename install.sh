@@ -25,6 +25,16 @@
 
 
 ############
+### Init
+###########
+
+# Make sure only root can run our script
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root - udo ./install.sh)" 1>&2
+   exit 1
+fi
+
+############
 ### Functions to catch/display errors during setup
 ############
 warn() {
@@ -60,7 +70,7 @@ date=$(date)
 read -p "The time is currently set to $date. Is this correct? [Y/n]" choice
 case "$choice" in
   n | N | no | NO | No )
-    sudo dpkg-reconfigure tzdata;;
+    dpkg-reconfigure tzdata;;
   * )
 esac
 
@@ -101,7 +111,7 @@ else
       yn="y"
     fi
     case "$yn" in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir "$installPath";;
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir "$installPath";;
         * ) echo "Aborting..."; exit;;
     esac
   fi
@@ -140,7 +150,7 @@ else
       yn="y"
     fi
     case "$yn" in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; sudo mkdir "$webPath";;
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir "$webPath";;
         * ) echo "Aborting..."; exit;;
     esac
   fi
@@ -152,8 +162,8 @@ fi
 ############
 if ! dpkg-query -W git > /dev/null; then
     echo "git not found, installing git..."
-    sudo apt-get update
-    sudo apt-get install -y git-core||die
+    apt-get update
+    apt-get install -y git-core||die
 fi
 
 
@@ -161,23 +171,23 @@ fi
 ### Create/configure user accounts
 ############
 echo -e "\n***** Creating and configuring user accounts... *****"
-sudo chown -R www-data:www-data "$webPath"||die
+chown -R www-data:www-data "$webPath"||die
 if id -u brewpi >/dev/null 2>&1; then
   echo "User 'brewpi' already exists, skipping..."
 else
-  sudo useradd -G www-data,dialout brewpi||die
-  echo -e "brewpi\nbrewpi\n" | sudo passwd brewpi||die
+  useradd -G www-data,dialout brewpi||die
+  echo -e "brewpi\nbrewpi\n" | passwd brewpi||die
 fi
 # add pi user to brewpi and www-data group
-sudo usermod -a -G www-data pi||die
-sudo usermod -a -G brewpi pi||die
+usermod -a -G www-data pi||die
+usermod -a -G brewpi pi||die
 
 echo -e "\n***** Checking install directories *****"
 
 if [ -d "$installPath" ]; then
   echo "$installPath already exists"
 else
-  sudo mkdir "$installPath"
+  mkdir "$installPath"
 fi
 
 dirName=$(date +%F-%k:%M:%S)
@@ -187,15 +197,15 @@ if [ "$(ls -A ${installPath})" ]; then
       mkdir ~/brewpi-backup
     fi
     mkdir ~/brewpi-backup/"$dirName"
-    sudo cp -R "$installPath" ~/brewpi-backup/"$dirName"/||die
-    sudo rm -rf "$installPath"/*||die
-    sudo find "$installPath"/ -name '.*' | sudo xargs rm -rf||die
+    cp -R "$installPath" ~/brewpi-backup/"$dirName"/||die
+    rm -rf "$installPath"/*||die
+    find "$installPath"/ -name '.*' | xargs rm -rf||die
 fi
 
 if [ -d "$webPath" ]; then
   echo "$webPath already exists"
 else
-  sudo mkdir "$webPath"
+  mkdir "$webPath"
 fi
 if [ "$(ls -A ${webPath})" ]; then
   echo "Web directory is NOT empty, backing up to this users home dir and then deleting contents..."
@@ -205,19 +215,19 @@ if [ "$(ls -A ${webPath})" ]; then
   if ! [ -a ~/brewpi-backup/"$dirName"/ ]; then
     mkdir ~/brewpi-backup/"$dirName"
   fi
-  sudo cp -R "$webPath" ~/brewpi-backup/"$dirName"/||die
-  sudo rm -rf "$webPath"/*||die
-  sudo find "$webPath"/ -name '.*' | sudo xargs rm -rf||die
+  cp -R "$webPath" ~/brewpi-backup/"$dirName"/||die
+  rm -rf "$webPath"/*||die
+  find "$webPath"/ -name '.*' | xargs rm -rf||die
 fi
 
-sudo chown -R www-data:www-data "$webPath"||die
-sudo chown -R brewpi:brewpi "$installPath"||die
+chown -R www-data:www-data "$webPath"||die
+chown -R brewpi:brewpi "$installPath"||die
 
 ############
 ### Set sticky bit! nom nom nom
 ############
-sudo find "$installPath" -type d -exec chmod g+rwxs {} \;||die
-sudo find "$webPath" -type d -exec chmod g+rwxs {} \;||die
+find "$installPath" -type d -exec chmod g+rwxs {} \;||die
+find "$webPath" -type d -exec chmod g+rwxs {} \;||die
 
 ############
 ### Clone BrewPi repositories
@@ -232,7 +242,7 @@ sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 echo -e "\n***** Installing/fixing dependencies, with bash $installPath/installDependencies.sh *****"
 echo "You can re-run this file after manually switching branches to update required dependencies."
 if [ -a "$installPath"/installDependencies.sh ]; then
-   sudo bash "$installPath"/installDependencies.sh
+   bash "$installPath"/installDependencies.sh
 else
    echo "Could not find installDependencies.sh!"
 fi
