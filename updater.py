@@ -189,6 +189,7 @@ def check_repo(repo):
 
     remoteBranch = ("%s" % remoteRef).replace(remote.name + "/", "")
 
+    checkedOutDifferentBranch = False
     if localBranch != remoteBranch:
         choice = raw_input("You chose " + remoteBranch + " but it is not your currently active branch - " +
                            "would you like me to check it out for you now? (Required to continue) [Y/n]: ")
@@ -196,7 +197,7 @@ def check_repo(repo):
             try:
                 print repo.git.checkout(remoteBranch)
                 print "Successfully switched to " + remoteBranch
-                updated = True
+                checkedOutDifferentBranch = True
             except git.GitCommandError, e:
                 if "Your local changes to the following files would be overwritten by checkout" in str(e):
                     print "Local changes exist in your current files that need to be stashed to continue"
@@ -205,6 +206,7 @@ def check_repo(repo):
                     print "Trying to checkout again..."
                 try:
                     print repo.git.checkout(remoteBranch)
+                    checkedOutDifferentBranch = True
                     print "Checkout successful"
                 except git.GitCommandError, e:
                     print e
@@ -239,7 +241,7 @@ def check_repo(repo):
             updated = update_repo(repo, remote.name, remoteBranch)
     else:
         print "Your local version of " + localName + " is up to date!"
-    return updated
+    return updated or checkedOutDifferentBranch
 
 print "####################################################"
 print "####                                            ####"
