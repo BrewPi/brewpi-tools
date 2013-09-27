@@ -32,7 +32,7 @@ def installDependencies(scriptDir):
     try:
         print "Installing dependencies and fixing permissions..."
         subprocess.check_call(["sudo", "bash", scriptDir + "/installDependencies.sh"], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         print "I tried to execute the installDependencies.sh bash script, an error occurred. " + \
               "Try running it from the command line in your brewpi-script dir"
 
@@ -44,9 +44,10 @@ def checkout_repo(repo, branch):
         repo.git.checkout(branch)
     except git.GitCommandError, e:
         print e
-        print "Failed. Ack! Quitting"
-        sys.exit()
+        print "Checking out branch '%s' failed! Aborting..." % branch
+        return False
     print "Success!"
+    return True
 
 
 ### Stash any local repo changes
@@ -69,11 +70,11 @@ def stashChanges(repo):
 
 
 ### Function used to stash local changes and update a branch passed to it
-def update_repo(repo, branch):
+def update_repo(repo, remote, branch):
     stashed = False
-    repo.git.fetch('origin', branch)
+    repo.git.fetch(remote, branch)
     try:
-        print repo.git.merge('origin/' + branch)
+        print repo.git.merge(remote, branch)
     except git.GitCommandError, e:
         print e
         if "Your local changes to the following files would be overwritten by merge" in str(e):
@@ -81,7 +82,7 @@ def update_repo(repo, branch):
                 return False
         print "Trying to merge again..."
         try:
-            print repo.git.merge('origin/' + branch)
+            print repo.git.merge(remote, branch)
         except git.GitCommandError, e:
             print e
             print "Sorry, cannot automatically stash/discard local changes. Aborting"
@@ -107,25 +108,60 @@ def update_repo(repo, branch):
 ### Function to be used to check most recent commit date on the repo passed to it
 def check_repo(repo):
     updated = False
-    repo.git.fetch("--prune")
     localBranch = repo.active_branch.name
-    remoteBranch = ""
     remoteRef = None
 
     print "You are currently on branch " + localBranch
 
-    ### Get available branches on the remote
-    remoteBranches = repo.remotes.origin.refs
-    remoteBranches.pop(0)  # remove HEAD from list
+    ### Get available remotes
+    remote = repo.remotes[0]
+    if len(repo.remotes) > 1:
+        print "Multiple remotes found in " + repo.working_tree_dir
+        for i, rem in enumerate(repo.remotes):
+            print "[%d] %s" % (i, rem.name)
+        print "[" + str(len(repo.remotes)) + "] Skip updating this repository"
+        while 1:
+            try:
+                choice = raw_input("From which remote do you want to update? [%s]:" % remote)
+                if choice == "":
+                    print "Updating from default remote %s" % remote
+                    break
+                else:
+                    selection = int(choice)
+            except ValueError:
+                print "Use the number!"
+                continue
+            try:
+                remote = repo.remotes[selection]
+            except IndexError:
+                print "Not a valid selection. Try again"
+                continue
+            break
 
-    print "\nAvailable branches on the remote for " + repo.working_tree_dir + ":"
+    repo.git.fetch(remote.name, "--prune")
+
+    ### Get available branches on the remote
+    try:
+        remoteBranches = remote.refs
+    except AssertionError as e:
+        print "Failed to get references from remote: " + repr(e)
+        print "Aborting update of " + repo.working_tree_dir
+        return False
+
+    print "\nAvailable branches on the remote '%s' for %s:" % (remote.name, repo.working_tree_dir)
+
     for i, ref in enumerate(remoteBranches):
         remoteRefName = "%s" % ref
-        remoteBranchName = remoteRefName.lstrip("origin/")
+        if "/HEAD" in remoteRefName:
+            remoteBranches.pop(i)  # remove HEAD from list
+
+    for i, ref in enumerate(remoteBranches):
+        remoteRefName = "%s" % ref
+        remoteBranchName = remoteRefName.replace(remote.name + "/", "")
         if remoteBranchName == localBranch:
             remoteRef = ref
         print "[%d] %s" % (i, remoteBranchName)
-    print "[" + str(len(remoteBranches)) + "] Skip"
+    print "[" + str(len(remoteBranches)) + "] Skip updating this repository"
 
     while 1:
         try:
@@ -147,7 +183,11 @@ def check_repo(repo):
             continue
         break
 
-    remoteBranch = ("%s" % remoteRef).lstrip("origin/")
+    if remoteRef is None:
+        print "Could not find branch selected branch on remote! Aborting"
+        return False
+
+    remoteBranch = ("%s" % remoteRef).replace(remote.name + "/", "")
 
     if localBranch != remoteBranch:
         choice = raw_input("You chose " + remoteBranch + " but it is not your currently active branch - " +
@@ -176,7 +216,7 @@ def check_repo(repo):
 
     if remoteRef is None:
         print "Error: Could not determine which remote reference to use, aborting"
-        exit(1)
+        return False
 
     localDate = repo.head.commit.committed_date
     localDateString = strftime("%a, %d %b %Y %H:%M:%S", localtime(localDate))
@@ -196,7 +236,7 @@ def check_repo(repo):
         print "*** Updates are available! ****"
         choice = raw_input("Would you like to update " + localName + " from " + remoteName + " [Y/n]: ")
         if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-            updated = update_repo(repo, branch)
+            updated = update_repo(repo, remote.name, remoteBranch)
     else:
         print "Your local version of " + localName + " is up to date!"
     return updated
