@@ -216,14 +216,30 @@ webPath = '/var/www'
 
 print "\n\n*** Updating BrewPi script repository ***"
 for i in range(3):
+	correctRepo = False
+	try:
+		git.Repo(scriptPath)
+        except git.NoSuchPathError:
+                print "The path %s does not exist" % scriptPath
+                scriptPath = raw_input("What path did you install the BrewPi python scripts to? ")
+		continue
+        except git.InvalidGitRepositoryError:
+                print "The path %s does not seem to be a valid git repository" % scriptPath
+                scriptPath = raw_input("What path did you install the BrewPi python scripts to? ")
+		continue
+        try:
+                gitConfig = open(scriptPath+'/.git/config', 'r')
+                for line in gitconfig:
+                        if "url = https://github.com/BrewPi/brewpi-script.git" in line:
+                                correctRepo = True
+                                break
+                gitConfig.close()
+	if not correctRepo:
+		print "The path %s does not seem to be the BrewPi python script git repository" % scriptPath
+		scriptPath = raw_input("What path did you install the BrewPi python scripts to? ")
+		continue
 	try:
 		changed = check_repo(git.Repo(scriptPath)) or changed
-	except git.NoSuchPathError:
-		print "The path %s does not exist" % scriptPath
-		scriptPath = raw_input("What path did you install the BrewPi python scripts to? ")
-	except git.InvalidGitRepositoryError:
-		print "The path %s does not seem to be a valid git repository" % scriptPath
-		scriptPath = raw_input("What path did you install the BrewPi python scripts to? ")
 	else:
 		break
 else:
@@ -231,16 +247,32 @@ else:
 
 print "\n\n*** Updating BrewPi web interface repository ***"
 for i in range(3):
+	correctRepo = False
+        try:
+                git.Repo(webPath)
+        except git.NoSuchPathError:
+                print "The path %s does not exist" % webPath
+                webPath = raw_input("What path did you install the BrewPi web interface scripts to? ")
+		continue
+        except git.InvalidGitRepositoryError:
+                print "The path %s does not seem to be a valid git repository" % webPath
+                webPath = raw_input("What path did you install the BrewPi web interface scripts to? ")
+		continue
 	try:
-		changed = check_repo(git.Repo(webPath)) or changed
-	except git.NoSuchPathError:
-		print "The path %s does not exist" % scriptPath
-		webPath = raw_input("What path did you install the BrewPi web interface scripts to? ")
-	except git.InvalidGitRepositoryError:
-		print "The path %s does not seem to be a valid git repository" % webPath
-		webPath = raw_input("What path did you install the BrewPi python scripts to? ")
-	else:
-		break;
+		gitConfig = open(webPath+'/.git/config', 'r')
+		for line in gitconfig:
+			if "url = https://github.com/BrewPi/brewpi-www.git" in line:
+				correctRepo = True
+				break
+		gitConfig.close()
+	if not correctRepo:
+                print "The path %s does not seem to be the BrewPi web interface git repository" % webPath
+                webPath = raw_input("What path did you install the BrewPi web interface scripts to? ")
+		continue
+        try:
+                changed = check_repo(git.Repo(webPath)) or changed
+        else:
+                break
 else:
 	print "Maximum number of tries reached, updating BrewPi web interface aborted"
 
