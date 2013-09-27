@@ -220,10 +220,10 @@ for i in range(3):
 		changed = check_repo(git.Repo(scriptPath)) or changed
 	except git.NoSuchPathError:
 		print "The path %s does not exist" % scriptPath
-		choice = raw_input("What path did you install the BrewPi python scripts to? ")
+		scriptPath = raw_input("What path did you install the BrewPi python scripts to? ")
 	except git.InvalidGitRepositoryError:
 		print "The path %s does not seem to be a valid git repository" % scriptPath
-		choice = raw_input("What path did you install the BrewPi python scripts to? ")
+		scriptPath = raw_input("What path did you install the BrewPi python scripts to? ")
 	else:
 		break
 else:
@@ -235,10 +235,10 @@ for i in range(3):
 		changed = check_repo(git.Repo(webPath)) or changed
 	except git.NoSuchPathError:
 		print "The path %s does not exist" % scriptPath
-		choice = raw_input("What path did you install the BrewPi web interface scripts to? ")
+		webPath = raw_input("What path did you install the BrewPi web interface scripts to? ")
 	except git.InvalidGitRepositoryError:
 		print "The path %s does not seem to be a valid git repository" % webPath
-		choice = raw_input("What path did you install the BrewPi python scripts to? ")
+		webPath = raw_input("What path did you install the BrewPi python scripts to? ")
 	else:
 		break;
 else:
