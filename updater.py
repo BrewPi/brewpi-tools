@@ -74,7 +74,7 @@ def update_repo(repo, remote, branch):
     stashed = False
     repo.git.fetch(remote, branch)
     try:
-        print repo.git.merge(remote, branch)
+        print repo.git.merge(remote + '/' + branch)
     except git.GitCommandError, e:
         print e
         if "Your local changes to the following files would be overwritten by merge" in str(e):
@@ -82,7 +82,7 @@ def update_repo(repo, remote, branch):
                 return False
         print "Trying to merge again..."
         try:
-            print repo.git.merge(remote, branch)
+            print repo.git.merge(remote + '/' + branch)
         except git.GitCommandError, e:
             print e
             print "Sorry, cannot automatically stash/discard local changes. Aborting"
