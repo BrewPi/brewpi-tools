@@ -28,13 +28,13 @@ except ImportError:
 
 
 ### call installDependencies.sh, so commands are only defined in one place.
-def installDependencies(scriptDir):
+def runAfterUpdate(scriptDir):
     try:
-        print "Installing dependencies and fixing permissions..."
-        subprocess.check_call(["sudo", "bash", scriptDir + "/installDependencies.sh"], stderr=subprocess.STDOUT)
+        print "Installing dependencies, updating CRON and fixing file permissions..."
+        subprocess.check_call(["sudo", "bash", scriptDir + "/install/runAfterUpdate.sh"], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError:
-        print "I tried to execute the installDependencies.sh bash script, an error occurred. " + \
-              "Try running it from the command line in your brewpi-script dir"
+        print "I tried to execute the runAfterUpdate.sh bash script, but an error occurred. " + \
+              "Try running it from the command line in your <brewpi-script>/install dir"
 
 
 ### Function used if requested branch has not been checked out
@@ -314,6 +314,6 @@ else:
     print "Maximum number of tries reached, updating BrewPi web interface aborted"
 
 if changed:
-    installDependencies(scriptPath)
+    runAfterUpdate(scriptPath)
 
 print "\n\n*** Done updating BrewPi! ***"

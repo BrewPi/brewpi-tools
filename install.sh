@@ -19,6 +19,7 @@
 ########################
 ### This script assumes a clean Wheezy Raspbian install.
 ### Freeder, v1.0, Aug 2013
+### Elco, Oct 2013
 ### Using a custom 'die' function shamelessly stolen from http://mywiki.wooledge.org/BashFAQ/101
 ### Using ideas even more shamelessly stolen from Elco and mdma. Thanks guys!
 ########################
@@ -117,7 +118,6 @@ else
   fi
 fi
 
-
 echo "Any data in the following location will be ERASED during install!"
 read -p "What is the path to your web directory? [/var/www]: " webPath
 if [ -z "$webPath" ]; then
@@ -156,16 +156,20 @@ else
   fi
 fi
 
-
 ############
-### Install git if not found. Other dependencies are installed later by script in repo
+### Install required packages
 ############
-if ! dpkg-query -W git > /dev/null; then
-    echo "git not found, installing git..."
-    apt-get update
-    apt-get install -y git-core||die
+echo -e "\n***** Installing/updating required packages... *****\n"
+lastUpdate=$(stat -c %Y /var/lib/apt/lists)
+nowTime=$(date +%s)
+if [ $(($nowTime - $lastUpdate)) -gt 604800 ] ; then
+    echo "last apt-get update was over a week ago. Running apt-get update before updating dependencies"
+    sudo apt-get update||die
 fi
 
+sudo apt-get install -y rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-setuptools python-git python-gitdb python-setuptools arduino-core git-core||die
+
+echo -e "\n***** Done processing BrewPi dependencies *****\n"
 
 ############
 ### Create/configure user accounts
@@ -236,15 +240,25 @@ echo -e "\n***** Downloading most recent BrewPi codebase... *****"
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
+
 ############
-### Run installDependencies script from repo.
+### Fix permissions
 ############
-echo -e "\n***** Installing/fixing dependencies, with bash $installPath/installDependencies.sh *****"
-echo "You can re-run this file after manually switching branches to update required dependencies."
-if [ -a "$installPath"/installDependencies.sh ]; then
-   bash "$installPath"/installDependencies.sh
+echo -e "\n***** Running fixPermissions.sh from the script repo. *****"
+if [ -a "$installPath"/install/fixPermissions.sh ]; then
+   bash "$installPath"/install/fixPermissions.sh
 else
-   echo "Could not find installDependencies.sh!"
+   echo "ERROR: Could not find fixPermissions.sh!"
+fi
+
+############
+### Install CRON job
+############
+echo -e "\n***** Running updateCron.sh from the script repo. *****"
+if [ -a "$installPath"/install/updateCron.sh ]; then
+   bash "$installPath"/install/updateCron.sh
+else
+   echo "ERROR: Could not find updateCron.sh!"
 fi
 
 ############
@@ -261,7 +275,7 @@ if grep -q "$defaultKey" /etc/ssh/ssh_host_rsa_key.pub; then
   fi
 fi
 
-echo -e "\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *"
+echo -e "\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *"
 echo -e "Review the log above for any errors, otherwise, your initial environment install is complete!"
 echo -e "Edit your $installPath/settings/config.cfg file if needed and then read http://docs.brewpi.com/getting-started/program-arduino.html for your next steps"
 echo -e "\nYou are currently using the password 'brewpi' for the brewpi user. If you wish to change this, type 'sudo passwd brewpi' now, and follow the prompt"
