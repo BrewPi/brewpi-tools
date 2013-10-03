@@ -241,6 +241,23 @@ sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"|
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
 
+###########
+### If non-default paths are used, update config files accordingly
+##########
+if [[ "$installPath" != "/home/brewpi" ]]; then
+    echo -e "\n***** Using non-default path for the script dir, updating config files *****"
+    echo "scriptPath = $installPath" >> "$installPath"/settings/config.cfg
+
+    echo "<?php " >> "$webPath"/config_user.php
+    echo "\$scriptPath = '$installPath';" >> "$webPath"/config_user.php
+fi
+
+if [[ "$webPath" != "/var/www" ]]; then
+    echo -e "\n***** Using non-default path for the web dir, updating config files *****"
+    echo "webPath = $webPath" >> "$installPath"/settings/config.cfg
+fi
+
+
 ############
 ### Fix permissions
 ############
