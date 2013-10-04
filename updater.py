@@ -31,10 +31,10 @@ except ImportError:
 def runAfterUpdate(scriptDir):
     try:
         print "Installing dependencies, updating CRON and fixing file permissions..."
-        subprocess.check_call(["sudo", "bash", scriptDir + "/install/runAfterUpdate.sh"], stderr=subprocess.STDOUT)
+        subprocess.check_call(["sudo", "bash", scriptDir + "/updates/runAfterUpdate.sh"], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError:
         print "I tried to execute the runAfterUpdate.sh bash script, but an error occurred. " + \
-              "Try running it from the command line in your <brewpi-script>/install dir"
+              "Try running it from the command line in your <brewpi-script>/updates dir"
 
 
 ### Function used if requested branch has not been checked out
