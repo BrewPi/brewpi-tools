@@ -266,8 +266,8 @@ fi
 ### Fix permissions
 ############
 echo -e "\n***** Running fixPermissions.sh from the script repo. *****"
-if [ -a "$installPath"/install/fixPermissions.sh ]; then
-   bash "$installPath"/install/fixPermissions.sh
+if [ -a "$installPath"/utils/fixPermissions.sh ]; then
+   bash "$installPath"/utils/fixPermissions.sh
 else
    echo "ERROR: Could not find fixPermissions.sh!"
 fi
@@ -276,8 +276,8 @@ fi
 ### Install CRON job
 ############
 echo -e "\n***** Running updateCron.sh from the script repo. *****"
-if [ -a "$installPath"/install/updateCron.sh ]; then
-   bash "$installPath"/install/updateCron.sh
+if [ -a "$installPath"/utils/updateCron.sh ]; then
+   bash "$installPath"/utils/updateCron.sh
 else
    echo "ERROR: Could not find updateCron.sh!"
 fi
