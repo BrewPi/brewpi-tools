@@ -36,7 +36,7 @@ def checkForUpdates():
         subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"],
                               stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError:
-        print "The update script was updated. Please re-run updater.py."
+        print "The update script was not up-to-date, but it should have been updated. Please re-run updater.py."
         exit(1)
 
 

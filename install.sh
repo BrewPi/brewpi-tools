@@ -59,7 +59,7 @@ unset CDPATH
 myPath="$( cd "$( dirname "${BASH_SOURCE[0]}")" && pwd )"
 bash "$myPath"/update-this-repo.sh
 if [ $? -ne 0 ]; then
-    echo "The installer was updated. Please re-run install.sh."
+    echo "The update script was not up-to-date, but it should have been updated. Please re-run install.sh."
     exit 1
 fi
 
