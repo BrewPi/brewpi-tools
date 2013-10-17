@@ -52,6 +52,18 @@ die () {
 }
 
 ############
+### Check whether installer is up-to-date
+############
+
+unset CDPATH
+myPath="$( cd "$( dirname "${BASH_SOURCE[0]}")" && pwd )"
+bash "$myPath"/update-this-repo.sh
+if [ $? -ne 0 ]; then
+    echo "The installer was updated. Please re-run install.sh."
+    exit 1
+fi
+
+############
 ### Setup questions
 ############
 

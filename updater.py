@@ -20,11 +20,24 @@
 import subprocess
 from time import localtime, strftime
 import sys
+import os
+
 try:
     import git
 except ImportError:
     print "This update script requires python-git, please install it with 'sudo apt-get install python-git"
     sys.exit(1)
+
+
+### calls update-this-repo, which returns 0 if the brewpi-tools repo is up-to-date
+def checkForUpdates():
+    try:
+        print "Checking whether the update script is up to date"
+        subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"],
+                              stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError:
+        print "The update script was updated. Please re-run updater.py."
+        exit(1)
 
 
 ### call installDependencies.sh, so commands are only defined in one place.
@@ -243,12 +256,16 @@ def check_repo(repo):
         print "Your local version of " + localName + " is up to date!"
     return updated or checkedOutDifferentBranch
 
+
 print "####################################################"
 print "####                                            ####"
 print "####      Welcome to the BrewPi Updater!        ####"
 print "####                                            ####"
 print "####################################################"
 print ""
+checkForUpdates()
+print ""
+
 print "Most users will want to select the 'master' choice at each of the following menus."
 branch = raw_input("Press enter to continue... ")
 
