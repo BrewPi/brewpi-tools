@@ -54,7 +54,7 @@ die () {
 ############
 ### Check whether installer is up-to-date
 ############
-
+echo -e "\nChecking whether this script is up to date...\n"
 unset CDPATH
 myPath="$( cd "$( dirname "${BASH_SOURCE[0]}")" && pwd )"
 bash "$myPath"/update-this-repo.sh
@@ -72,11 +72,12 @@ free=$(df /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $4 }')
 free_readable=$(df -H /home | grep -vE '^Filesystem|tmpfs|cdrom|none' | awk '{ print $4 }')
 
 if [ "$free" -le "512000" ]; then
-    echo "Disk usage is $free_percentage, free disk space is $free_readable"
+    echo -e "\nDisk usage is $free_percentage, free disk space is $free_readable"
     echo "Not enough space to continue setup. Installing BrewPi requires at least 512mb free space"
     echo "Did you forget to expand your root partition? To do so run 'sudo raspi-config', expand your root partition and reboot"
+    exit 1
 else
-    echo "Disk usage is $free_percentage, free disk space is $free_readable. Enough to install BrewPi"
+    echo -e "\nDisk usage is $free_percentage, free disk space is $free_readable. Enough to install BrewPi\n"
 fi
 
 date=$(date)
@@ -91,25 +92,22 @@ esac
 ############
 ### Now for the install!
 ############
-echo "*** For all the following settings, hitting 'enter' will accept the default option."
-echo "*** Most users will want to do this"
+echo -e "\n*** This script will first ask you where to install the brewpi python scripts and the web interface"
+echo "Hitting 'enter' will accept the default option in [brackets] (recommended)."
 
-echo "Any data in the following location will be ERASED during install!"
+echo -e "\nAny data in the following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
 if [ -z "$installPath" ]; then
   installPath="/home/brewpi"
 else
   case "$installPath" in
     y | Y | yes | YES| Yes )
-        echo "$installPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
-        read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath;
-        if [ -z "$installPath" ]; then
-            installPath="/home/brewpi"
-        fi;;
+        installPath="/home/brewpi";; # accept default when y/yes is answered
     * )
-        echo "Installing script in $installPath";;
+        pass;;
   esac
 fi
+echo "Installing script in $installPath";
 
 if [ -d "$installPath" ]; then
   if [ "$(ls -A ${installPath})" ]; then
@@ -132,22 +130,19 @@ else
   fi
 fi
 
-echo "Any data in the following location will be ERASED during install!"
-read -p "What is the path to your web directory? [/var/www]: " webPath
+echo -e "\nAny data in the following location will be ERASED during install!"
+read -p "What should be the path to your web directory for brewpi? [/var/www]: " webPath
 if [ -z "$webPath" ]; then
   webPath="/var/www"
 else
   case "$webPath" in
-    y | Y | yes | YES| Yes )
-        echo "$webPath is probably not a valid path. Press Enter to accept the default or type a valid path...";
-        read -p "What is the path to your web directory? [/var/www]: " webPath
-        if [ -z "$webPath" ]; then
-            webPath="/var/www"
-        fi;;
+    y | Y | yes | YES | Yes)
+        webPath="/var/www";;
     * )
-        echo "Installing web interface in $webPath";;
+        pass;;
   esac
 fi
+echo "Installing web interface in $webPath";
 
 if [ -d "$webPath" ]; then
   if [ "$(ls -A ${webPath})" ]; then
