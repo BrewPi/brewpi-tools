@@ -253,10 +253,6 @@ echo -e "\n***** Downloading most recent BrewPi codebase... *****"
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
-# temporarily checkout develop in both dirs for testing until we merge into master
-sudo -u brewpi git --git-dir="$installPath"/.git --work-tree="$installPath" checkout develop
-sudo -u www-data git --git-dir="$webPath"/.git --work-tree="$webPath" checkout develop
-
 ###########
 ### If non-default paths are used, update config files accordingly
 ##########
