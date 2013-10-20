@@ -91,6 +91,8 @@ esac
 ############
 ### Now for the install!
 ############
+echo "*** For all the following settings, hitting 'enter' will accept the default option."
+echo "*** Most users will want to do this"
 
 echo "Any data in the following location will be ERASED during install!"
 read -p "Where would you like to install BrewPi? [/home/brewpi]: " installPath
