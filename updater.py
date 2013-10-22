@@ -74,13 +74,13 @@ def stashChanges(repo):
     if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
         print "Attempting to stash any changes...\n"
         try:
-            repo.git.config('--get-all', 'user.name')
+            repo.git.config('--get', 'user.name')
         except git.GitCommandError, e:
             print "Warning: No user name set for git, which is necessary to stash."
             userName = raw_input("--> Please enter a global username for git on this system: ")
             repo.git.config('--global', 'user.name', userName)
         try:
-            repo.git.config('--get-all', 'user.email')
+            repo.git.config('--get', 'user.email')
         except git.GitCommandError, e:
             print "Warning: No user e-mail address set for git, which is necessary to stash."
             userEmail = raw_input("--> Please enter a global user e-mail address for git on this system: ")
