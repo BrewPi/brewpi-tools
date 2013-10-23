@@ -297,7 +297,7 @@ for i in range(3):
         scriptRepo = git.Repo(scriptPath)
         gitConfig = open(scriptPath + '/.git/config', 'r')
         for line in gitConfig:
-            if "url = https://github.com/BrewPi/brewpi-script" in line:
+            if "url =" in line and "brewpi-script" in line:
                 correctRepo = True
                 break
         gitConfig.close()
@@ -326,7 +326,7 @@ for i in range(3):
         webRepo = git.Repo(webPath)
         gitConfig = open(webPath + '/.git/config', 'r')
         for line in gitConfig:
-            if "url = https://github.com/BrewPi/brewpi-www" in line:
+            if "url =" in line and "brewpi-www" in line:
                 correctRepo = True
                 break
         gitConfig.close()
