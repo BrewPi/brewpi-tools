@@ -348,6 +348,14 @@ else:
     print "Maximum number of tries reached, updating BrewPi web interface aborted"
 
 if changed:
+    print "\nOne our more repositories were updated, running runAfterUpdate.sh from %s/utils..."
     runAfterUpdate(scriptPath)
+else:
+    print "\nNo changes were made, skipping runAfterUpdate.sh."
+    print "If you encounter problems, you can start it manually with:"
+    print "sudo %s/utils/runAfterUpdate.sh" % scriptPath
+
+print "\nDon't forget to reprogram your Arduino with the latest hex file " \
+      "via the maintenance panel in the web interface."
 
 print "\n\n*** Done updating BrewPi! ***"
