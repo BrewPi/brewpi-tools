@@ -42,7 +42,7 @@ def checkForUpdates():
             sys.exit(1)
     else:
         print "The required file update-this-repo.sh was not found. This is likely to occur if you manually copied updater.py here.\n"+ \
-            "Please run this from the original location you (usually <brewpi-script>/utils) and try again."
+            "Please run this from the original location you installed (usually <brewpi-script>/utils) and try again."
         sys.exit(1)
 
 
