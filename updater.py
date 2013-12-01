@@ -355,7 +355,42 @@ else:
     print "If you encounter problems, you can start it manually with:"
     print "sudo %s/utils/runAfterUpdate.sh" % scriptPath
 
-print "\nDon't forget to reprogram your Arduino with the latest hex file " \
-      "via the maintenance panel in the web interface."
+### Check arduino hex file version against current brewpi version
+print "\nChecking Arduino hex file version..."
+try:
+	sys.path.insert(0, scriptPath)
+	import BrewPiUtil as util
+except: 
+	print "Error reading config util path"
 
+configFile = scriptPath + '/settings/config.cfg'
+config = util.readCfgWithDefaults(configFile)
+
+try:
+	import brewpiVersion
+
+	port = config['port']
+	ser, conn = brewpiVersion.setupSerial(port, config.get('dumpSerial', False))
+	hwVersion = brewpiVersion.getVersionFromSerial(ser)
+	with open(scriptPath+'/brewpi.py', 'r') as versionFile:
+		for line in versionFile:
+	        	if 'compatibleHwVersion =' in line:
+				bpVersion = line.split("= ")[1].replace("\"", "")
+				break
+	if hwVersion is None:
+		print "Unable to retrieve version number from Arduino, skipping"
+	else:
+		print "Arduino version number: "+hwVersion.toString()
+		print "Brewpi version number:  "+bpVersion
+		if hwVersion.toString() in bpVersion:
+			print "Your Arduino is up to date, no need to upload a new hex file"
+		else:
+			print "Your Arduino is no longer up to date, Please download the most current hex file from"
+			print "http://dl.brewpi.com/brewpi-avr/stable/ and reprogram the Arduino via the maintenance panel"
+			print "in the web interface"
+except serial.serialutil.SerialException:
+	print "Unable to connect to Arduino, perhaps it is disconnected or otherwise unavailable"
+	print "Make sure to check http://dl.brewpi.com/brewpi-avr/stable/ for the most current version"
+	
+	
 print "\n\n*** Done updating BrewPi! ***"
