@@ -368,43 +368,41 @@ except:
 configFile = scriptPath + '/settings/config.cfg'
 config = util.readCfgWithDefaults(configFile)
 
-#try:
-import brewpiVersion
+try:
+	import brewpiVersion
 
-ser, conn = brewpiVersion.setupSerial(config)
-hwVersion = brewpiVersion.getVersionFromSerial(ser)
-with open(scriptPath+'/brewpi.py', 'r') as versionFile:
-	for line in versionFile:
-		if 'compatibleHwVersion =' in line:
-			bpVersion = line.split("= ")[1].replace("\"", "")
-			break
-if hwVersion is None:
-	print "Unable to retrieve version number from Arduino, skipping"
-else:
-	print "Arduino version number: "+hwVersion.toString()
-	print "Brewpi version number:  "+bpVersion
-
-#except:
-#	print "Unable to connect to Arduino, perhaps it is disconnected or otherwise unavailable"
-#	print "Make sure to check http://dl.brewpi.com/brewpi-avr/stable/ for the most current version and upload via the BrewPi web interface"
-
-### REMOVE ME~!!!!! #####
-#		if hwVersion.toString() in bpVersion:
-	if False:
-		print "Your Arduino is up to date, no need to upload a new hex file"
+	ser, conn = brewpiVersion.setupSerial(config)
+	hwVersion = brewpiVersion.getVersionFromSerial(ser)
+	with open(scriptPath+'/brewpi.py', 'r') as versionFile:
+		for line in versionFile:
+			if 'compatibleHwVersion =' in line:
+				bpVersion = line.split("= ")[1].replace("\"", "")
+				break
+	if hwVersion is None:
+		print "Unable to retrieve version number from Arduino, skipping"
 	else:
-		print "Your Arduino is not up to date, Fetching available version list..."
+		print "Arduino version number: "+hwVersion.toString()
+		print "Brewpi version number:  "+bpVersion
 
-		hexList = []
-		url = "http://dl.brewpi.com/"
-		path = "brewpi-avr/stable/"
-		pattern = '<A HREF="/%s.*?">(.*?)</A>' % path
-		response = urllib2.urlopen(url+path).read()
-		for i in response.split("<table>")[1].split('<tr>'):
-			if ".hex" in i:
-				hexList.append(i.split("</a>")[0].split(">")[-1])
-		for i, ref in enumerate(hexList):
-			print "[%d] %s" % (i, ref)
+except:
+	print "Unable to connect to Arduino, perhaps it is disconnected or otherwise unavailable"
+	print "Make sure to check http://dl.brewpi.com/brewpi-avr/stable/ for the most current version and upload via the BrewPi web interface"
+
+if hwVersion.toString() in bpVersion:
+	print "Your Arduino is up to date, no need to upload a new hex file"
+else:
+	print "Your Arduino is not up to date, Fetching available version list..."
+
+	hexList = []
+	url = "http://dl.brewpi.com/"
+	path = "brewpi-avr/stable/"
+	pattern = '<A HREF="/%s.*?">(.*?)</A>' % path
+	response = urllib2.urlopen(url+path).read()
+	for i in response.split("<table>")[1].split('<tr>'):
+		if ".hex" in i:
+			hexList.append(i.split("</a>")[0].split(">")[-1])
+	for i, ref in enumerate(hexList):
+		print "[%d] %s" % (i, ref)
 	print "[" + str(len(hexList)) + "] Skip updating the hex file"
 
 ### List stable hex files on dl.brewpi.com, allow user to select the correct one to download and install
@@ -433,26 +431,24 @@ else:
 		sys.exit()
 
 ### Download the selected hex file
-try:
-	f = urllib2.urlopen(url+path+hexList[selection])
-	print "Downloading " + hexList[selection]
+	try:
+		f = urllib2.urlopen(url+path+hexList[selection])
+		print "Downloading " + hexList[selection]
 
-	# Open our local file for writing
-	with open(scriptPath+"/utils/"+hexList[selection], "wb") as local_file:
-		local_file.write(f.read())
+		# Open our local file for writing
+		with open(scriptPath+"/utils/"+hexList[selection], "wb") as local_file:
+			local_file.write(f.read())
 
-except urllib2.HTTPError, e:
-	print "HTTP Error:", e.code, url
-except urllib2.URLError, e:
-	print "URL Error:", e.reason, url		
+	except urllib2.HTTPError, e:
+		print "HTTP Error:", e.code, url
+	except urllib2.URLError, e:
+		print "URL Error:", e.reason, url		
 
-import programArduino
-boardType = hexList[selection].split("-")[1]
-hexFile = scriptPath+'/utils/'+hexList[selection]
-restoreSettings = True
-restoreDevices = True
-programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
-
-		
-
-print "\n\n*** Done updating BrewPi! ***"
+	import programArduino
+	boardType = hexList[selection].split("-")[1]
+	hexFile = scriptPath+'/utils/'+hexList[selection]
+	restoreSettings = True
+	restoreDevices = True
+	programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
+	
+print "\n\n*** Done updating BrewPi! ***\n"
