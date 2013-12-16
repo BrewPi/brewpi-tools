@@ -31,6 +31,13 @@ except ImportError:
 	print "This update script requires python-git, please install it with 'sudo apt-get install python-git"
 	sys.exit(1)
 
+### Quits all running instances of BrewPi
+def quitBrewPi():
+	import BrewPiProcess
+	allProcesses = BrewPiProcess.BrewPiProcesses()
+	allProcesses.quitAll()
+	print "BrewPi stopped."
+
 
 ### calls update-this-repo, which returns 0 if the brewpi-tools repo is up-to-date
 def checkForUpdates():
@@ -321,6 +328,9 @@ for i in range(3):
 else:
 	print "Maximum number of tries reached, updating BrewPi scripts aborted"
 
+### Add BrewPi repo into the sys path, so we can import those modules as needed later
+sys.path.insert(0, scriptPath)
+
 print "\n\n*** Updating BrewPi web interface repository ***"
 for i in range(3):
 	correctRepo = False
@@ -357,10 +367,12 @@ else:
 	print "If you encounter problems, you can start it manually with:"
 	print "sudo %s/utils/runAfterUpdate.sh" % scriptPath
 
+print "Stopping any running instances of BrewPi to check/update hex file..."
+quitBrewPi()
+
 ### Check arduino hex file version against current brewpi version
 print "\nChecking Arduino hex file version..."
 try:
-	sys.path.insert(0, scriptPath)
 	import BrewPiUtil as util
 except: 
 	print "Error reading config util path"
@@ -451,4 +463,5 @@ else:
 	restoreDevices = True
 	programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
 	
+util.removeDontRunFile(webPath+"/do_not_run_brewpi")
 print "\n\n*** Done updating BrewPi! ***\n"
