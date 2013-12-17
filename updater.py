@@ -382,8 +382,7 @@ config = util.readCfgWithDefaults(configFile)
 
 try:
     import brewpiVersion
-
-    ser, conn = brewpiVersion.setupSerial(config)
+    ser, conn = util.setupSerial(config)
     hwVersion = brewpiVersion.getVersionFromSerial(ser)
     with open(scriptPath+'/brewpi.py', 'r') as versionFile:
         for line in versionFile:
