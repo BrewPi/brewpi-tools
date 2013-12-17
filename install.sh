@@ -267,7 +267,7 @@ fi
 
 if [[ "$webPath" != "/var/www" ]]; then
     echo -e "\n***** Using non-default path for the web dir, updating config files *****"
-    echo "webPath = $webPath" >> "$installPath"/settings/config.cfg
+    echo "wwwPath = $webPath" >> "$installPath"/settings/config.cfg
 fi
 
 
