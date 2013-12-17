@@ -283,11 +283,11 @@ def check_repo(repo):
     return updated or checkedOutDifferentBranch
 
 
-print "#################################################"
-print "####                                         ####"
-print "####   Welcome to the BrewPi Updater!        ####"
-print "####                                         ####"
-print "#################################################"
+print "######################################################"
+print "####                                              ####"
+print "####        Welcome to the BrewPi Updater!        ####"
+print "####                                              ####"
+print "######################################################"
 print ""
 checkForUpdates()
 print ""
