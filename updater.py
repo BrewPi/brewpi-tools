@@ -32,10 +32,10 @@ except ImportError:
     sys.exit(1)
 
 ### Quits all running instances of BrewPi
-def quitBrewPi():
+def quitBrewPi(webPath):
     import BrewPiProcess
     allProcesses = BrewPiProcess.BrewPiProcesses()
-    allProcesses.quitAll()
+    allProcesses.stopAll(webPath+"/do_not_run_brewpi")
     print "BrewPi stopped."
 
 
@@ -400,7 +400,7 @@ else:
     print "sudo %s/utils/runAfterUpdate.sh" % scriptPath
 
 print "Stopping any running instances of BrewPi to check/update hex file..."
-quitBrewPi()
+quitBrewPi(webPath)
 
 ### Check arduino hex file version against current brewpi version
 print "\nChecking Arduino hex file version..."
