@@ -458,8 +458,16 @@ else:
     import programArduino
     boardType = hexList[selection].split("-")[1]
     hexFile = scriptPath+'/utils/'+hexList[selection]
-    restoreSettings = True
-    restoreDevices = True
+    chooseSettings = raw_input("Would you like to keep your current Arduino settings? [Y/n]: ")
+    chooseDevices = raw_input("Would you like to keep your current Arduino Device list? [Y/n]: ")
+    if chooseSettings is "Y" or "y" or "Yes" or "yes" or "":
+        restoreSettings = True
+    else:
+        restoreSettings = False
+    if chooseDevices is "Y" or "y" or "Yes" or "yes" or "":
+        restoreDevices = True
+    else:
+        restoreDevices = False
     programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
     
 util.removeDontRunFile(webPath+"/do_not_run_brewpi")
