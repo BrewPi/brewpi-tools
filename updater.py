@@ -282,6 +282,38 @@ def check_repo(repo):
         print "Your local version of " + localName + " is up to date!"
     return updated or checkedOutDifferentBranch
 
+### This function will retrieve the selected hex file from the web
+def downloadHex(binary, config):
+    try:
+        f = urllib2.urlopen(url+path+binary)
+        print "Downloading " + binary
+
+        # Open our local file for writing
+        with open(scriptPath+"/utils/"+binary, "wb") as local_file:
+            local_file.write(f.read())
+
+    except urllib2.HTTPError, e:
+        print "HTTP Error:", e.code, url
+        return
+    except urllib2.URLError, e:
+        print "URL Error:", e.reason, url
+        return
+
+    import programArduino
+    boardType = binary.split("-")[1]
+    hexFile = scriptPath+'/utils/'+binary
+    chooseSettings = raw_input("Would you like to keep your current Arduino settings? [Y/n]: ")
+    chooseDevices = raw_input("Would you like to keep your current Arduino Device list? [Y/n]: ")
+    if chooseSettings is "Y" or "y" or "Yes" or "yes" or "":
+        restoreSettings = True
+    else:
+        restoreSettings = False
+    if chooseDevices is "Y" or "y" or "Yes" or "yes" or "":
+        restoreDevices = True
+    else:
+        restoreDevices = False
+    programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
+
 
 print "######################################################"
 print "####                                              ####"
@@ -441,34 +473,11 @@ else:
         print "Could not find hex file listing! Aborting"
         sys.exit()
 
-### Download the selected hex file
-    try:
-        f = urllib2.urlopen(url+path+hexList[selection])
-        print "Downloading " + hexList[selection]
-
-        # Open our local file for writing
-        with open(scriptPath+"/utils/"+hexList[selection], "wb") as local_file:
-            local_file.write(f.read())
-
-    except urllib2.HTTPError, e:
-        print "HTTP Error:", e.code, url
-    except urllib2.URLError, e:
-        print "URL Error:", e.reason, url        
-
-    import programArduino
-    boardType = hexList[selection].split("-")[1]
-    hexFile = scriptPath+'/utils/'+hexList[selection]
-    chooseSettings = raw_input("Would you like to keep your current Arduino settings? [Y/n]: ")
-    chooseDevices = raw_input("Would you like to keep your current Arduino Device list? [Y/n]: ")
-    if chooseSettings is "Y" or "y" or "Yes" or "yes" or "":
-        restoreSettings = True
+### Download the hex file chosen from list
+    if selection < len(hexList):
+        downloadHex(hexList[selection], config)
     else:
-        restoreSettings = False
-    if chooseDevices is "Y" or "y" or "Yes" or "yes" or "":
-        restoreDevices = True
-    else:
-        restoreDevices = False
-    programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
+        print "Skipping Arduino update"
     
 util.removeDontRunFile(webPath+"/do_not_run_brewpi")
 print "\n\n*** Done updating BrewPi! ***\n"
