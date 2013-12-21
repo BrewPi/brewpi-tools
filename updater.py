@@ -412,10 +412,15 @@ except:
 configFile = scriptPath + '/settings/config.cfg'
 config = util.readCfgWithDefaults(configFile)
 
+### Get version number
 try:
     import brewpiVersion
     ser, conn = util.setupSerial(config)
     hwVersion = brewpiVersion.getVersionFromSerial(ser)
+    shield = hwVersion.shield
+    board = hwVersion.board
+    if "standard" in board:
+        board = "uno"
     with open(scriptPath+'/brewpi.py', 'r') as versionFile:
         for line in versionFile:
             if 'compatibleHwVersion =' in line:
@@ -447,11 +452,18 @@ else:
     for i, ref in enumerate(hexList):
         print "[%d] %s" % (i, ref)
     print "[" + str(len(hexList)) + "] Skip updating the hex file"
+    print ""
+    for i in hexList:
+        if shield in i:
+            if board in i:
+                hexGuess = i
+                break
+    print "I think the file you want is " +hexGuess
 
 ### List stable hex files on dl.brewpi.com, allow user to select the correct one to download and install
     while 1:
         try:
-            choice = raw_input("Enter the number of the hex file that corresponds to your Arduino: ")
+            choice = raw_input("Enter the number of the hex file that corresponds to your Arduino: ["+str(hexList.index(hexGuess))+"]")
             if choice == "":
                 print "Please select a number"
                 continue
@@ -462,6 +474,8 @@ else:
             continue
         if selection == len(hexList):
             break    
+        if selection is "":
+            selection = hexList.index(hexGuess)
         try:
             foo = hexList[selection]
         except IndexError:
