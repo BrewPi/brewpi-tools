@@ -453,20 +453,25 @@ else:
         print "[%d] %s" % (i, ref)
     print "[" + str(len(hexList)) + "] Skip updating the hex file"
     print ""
+    found = False
     for i in hexList:
         if shield in i:
             if board in i:
                 hexGuess = i
+                found = True
                 break
-    print "I think the file you want is " +hexGuess
+    if found:
+        print "I think the file you want is " +hexGuess
+        guess = str(hexList.index(hexGuess))
+    else:
+        guess = str(len(hexList))
 
 ### List stable hex files on dl.brewpi.com, allow user to select the correct one to download and install
     while 1:
         try:
-            choice = raw_input("Enter the number of the hex file that corresponds to your Arduino: ["+str(hexList.index(hexGuess))+"]")
-            if choice == "":
-                print "Please select a number"
-                continue
+            choice = raw_input("Enter the number of the hex file that corresponds to your Arduino: ["+guess+"]")
+            if choice is "":
+                selection = len(hexList)
             else:
                 selection = int(choice)
         except ValueError:
@@ -474,8 +479,6 @@ else:
             continue
         if selection == len(hexList):
             break    
-        if selection is "":
-            selection = hexList.index(hexGuess)
         try:
             foo = hexList[selection]
         except IndexError:
