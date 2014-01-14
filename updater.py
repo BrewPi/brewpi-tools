@@ -50,20 +50,6 @@ def runAfterUpdate(scriptDir):
         print "I tried to execute the runAfterUpdate.sh bash script, but an error occurred. " + \
               "Try running it from the command line in your <brewpi-script>/utils dir"
 
-
-### Function used if requested branch has not been checked out
-def checkout_repo(repo, branch):
-    print "Attempting to checkout " + branch
-    try:
-        repo.git.checkout(branch)
-    except git.GitCommandError, e:
-        print e
-        print "Checking out branch '%s' failed! Aborting..." % branch
-        return False
-    print "Success!"
-    return True
-
-
 ### Stash any local repo changes
 def stashChanges(repo):
     print "\nYou have local changes in this repository, that are prevent a successful merge."
@@ -77,7 +63,7 @@ def stashChanges(repo):
             repo.git.config('--get', 'user.name')
         except git.GitCommandError, e:
             print "Warning: No user name set for git, which is necessary to stash."
-            userName = raw_input("--> Please enter a global username for git on this system: ")
+            userName = raw_input("--> Please enter a global username for git on this system (just make something up): ")
             repo.git.config('--global', 'user.name', userName)
         try:
             repo.git.config('--get', 'user.email')
@@ -224,24 +210,29 @@ def check_repo(repo):
         choice = raw_input("You chose " + remoteBranch + " but it is not your currently active branch - " +
                            "would you like me to check it out for you now? (Required to continue) [Y/n]: ")
         if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-            try:
-                print repo.git.checkout(remoteBranch)
-                print "Successfully switched to " + remoteBranch
-                checkedOutDifferentBranch = True
-            except git.GitCommandError, e:
-                if "Your local changes to the following files would be overwritten by checkout" in str(e):
-                    print "Local changes exist in your current files that need to be stashed to continue"
-                    if not stashChanges(repo):
-                        return
-                    print "Trying to checkout again..."
+            stashedForCheckout = False
+            while True:
                 try:
-                    print repo.git.checkout(remoteBranch)
+                    if remoteBranch in repo.branches:
+                        print repo.git.checkout(remoteBranch)
+                    else:
+                        print repo.git.checkout(remoteRef, b=remoteBranch)
+                    print "Successfully switched to " + remoteBranch
                     checkedOutDifferentBranch = True
-                    print "Checkout successful"
+                    break
                 except git.GitCommandError, e:
-                    print e
-                    print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
-                    return False
+                    if not stashedForCheckout:
+                        if "Your local changes to the following files would be overwritten by checkout" in str(e):
+                            print "Local changes exist in your current files that need to be stashed to continue"
+                            if not stashChanges(repo):
+                                return
+                            print "Trying to checkout again..."
+                            stashedForCheckout = True # keep track of stashing, so it is only tried once
+                            continue # retry after stash
+                    else:
+                        print e
+                        print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
+                        return False
         else:
             print "Skipping this branch"
             return False
