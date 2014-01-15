@@ -16,6 +16,7 @@
 # along with BrewPi. If not, see <http://www.gnu.org/licenses/>.
 
 ### Geo Van O, v0.9, Sep 2013
+### Elco Jacobs, sept 2013
 
 import subprocess
 from time import localtime, strftime
@@ -65,9 +66,25 @@ def checkout_repo(repo, branch):
 
 ### Stash any local repo changes
 def stashChanges(repo):
+    print "\nYou have local changes in this repository, that are prevent a successful merge."
+    print "These changes can be stashed to bring your repository back to its original state so we can merge."
+    print "Your changes are not lost, but saved on the stash." +\
+          "You can (optionally) get them back later with 'git stash pop'."
     choice = raw_input("Would you like to stash local changes? (Required to continue) [Y/n]: ")
     if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
         print "Attempting to stash any changes...\n"
+        try:
+            repo.git.config('--get', 'user.name')
+        except git.GitCommandError, e:
+            print "Warning: No user name set for git, which is necessary to stash."
+            userName = raw_input("--> Please enter a global username for git on this system: ")
+            repo.git.config('--global', 'user.name', userName)
+        try:
+            repo.git.config('--get', 'user.email')
+        except git.GitCommandError, e:
+            print "Warning: No user e-mail address set for git, which is necessary to stash."
+            userEmail = raw_input("--> Please enter a global user e-mail address for git on this system: ")
+            repo.git.config('--global', 'user.email', userEmail)
         try:
             resp = repo.git.stash()
             print "\n" + resp + "\n"
@@ -280,7 +297,7 @@ for i in range(3):
         scriptRepo = git.Repo(scriptPath)
         gitConfig = open(scriptPath + '/.git/config', 'r')
         for line in gitConfig:
-            if "url = https://github.com/BrewPi/brewpi-script" in line:
+            if "url =" in line and "brewpi-script" in line:
                 correctRepo = True
                 break
         gitConfig.close()
@@ -309,7 +326,7 @@ for i in range(3):
         webRepo = git.Repo(webPath)
         gitConfig = open(webPath + '/.git/config', 'r')
         for line in gitConfig:
-            if "url = https://github.com/BrewPi/brewpi-www" in line:
+            if "url =" in line and "brewpi-www" in line:
                 correctRepo = True
                 break
         gitConfig.close()
@@ -331,6 +348,14 @@ else:
     print "Maximum number of tries reached, updating BrewPi web interface aborted"
 
 if changed:
+    print "\nOne our more repositories were updated, running runAfterUpdate.sh from %s/utils..."
     runAfterUpdate(scriptPath)
+else:
+    print "\nNo changes were made, skipping runAfterUpdate.sh."
+    print "If you encounter problems, you can start it manually with:"
+    print "sudo %s/utils/runAfterUpdate.sh" % scriptPath
+
+print "\nDon't forget to reprogram your Arduino with the latest hex file " \
+      "via the maintenance panel in the web interface."
 
 print "\n\n*** Done updating BrewPi! ***"
