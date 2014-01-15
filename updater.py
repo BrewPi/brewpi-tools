@@ -147,6 +147,8 @@ def check_repo(repo):
             except ValueError:
                 print "Use the number!"
                 continue
+            if selection == len(repo.remotes):
+                return False # choice = skip updating
             try:
                 remote = repo.remotes[selection]
             except IndexError:
@@ -191,7 +193,7 @@ def check_repo(repo):
             print "Use the number!"
             continue
         if selection == len(remoteBranches):
-            return False
+            return False # choice = skip updating
         try:
             remoteRef = remoteBranches[selection]
         except IndexError:
