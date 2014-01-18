@@ -277,6 +277,47 @@ else
    echo "ERROR: Could not find fixPermissions.sh!"
 fi
 
+###########
+### Install wifi restart-er
+###########
+ifconfig -a|grep wlan
+if [ $? -eq 0 ]; then 
+    echo -e "*** *** *** ***"
+    echo -e ""
+    echo -e "I see you have a wifi adaptor configured."
+    echo -e "The wifi on a Raspberry Pi often drops out and does not reconnect for a variety of reasons."
+    read -p "Would you like to install a script to attempt to re-enable the wifi connection if it drops? [Y/n]: " wifi
+    if [ -z "$wifi" ]; then
+      wifi="Y"
+    else
+      case "$wifi" in
+        y | Y | yes | YES | Yes)
+#            gateway = route -n | grep 'UG[ \t]' | awk '{print $2}' 
+            gateway = IP=$(/sbin/ip route | awk '/default/ { print $3 }')
+            ### Make sure auto wlan0 is added to /etc/network/interfaces, otherwise it causes trouble bringing the interface back up
+            grep "auto wlan0" /etc/network/interfaces
+            if [ $? -ne 0 ]; then
+                printf '%s\n' 0a "auto wlan0" . w | ed -s /etc/network/interfaces
+            fi
+
+            ### Update enableWifi.sh gateway IP settings
+            sed "s/ROUTER=\"192.168.1.1\"/$gateway/" $installPath/utils/enableWlan.sh 
+
+            ### Check if enableWlan is already added to cron file and, if not, add it
+            grep "enableWlan.sh" /etc/cron.d/brewpi
+            if [ $? -eq 0]; then
+                echo "Cron entry already exists, skipping..."
+            else 
+                echo "Installing cron job for Wifi checking..."
+                echo "*/10 * * * * $installPath/utils/enableWlan.sh 1>>$installPath/logs/stdout.txt 2>>$installPath/logs/stderr.txt" >> /etc/cron.d/brewpi
+            fi
+
+        * )
+            pass;;
+      esac
+    fi
+fi
+
 ############
 ### Install CRON job
 ############
