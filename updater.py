@@ -403,11 +403,12 @@ try:
                 print "\n"
                 wlanInstall = subprocess.Popen(["sudo "+scriptPath+"/utils/wifiChecker.sh install"], shell = True, stdout = subprocess.PIPE)
                 print wlanInstall.stdout.read()
+                changed = True
 except (IOError):
     print "ERROR: Could not find/open /etc/cron.d/brewpi"
 
 if changed:
-    print "\nOne our more repositories were updated, running runAfterUpdate.sh from %s/utils..."
+    print "\nOne our more repositories or the cron job were updated, running runAfterUpdate.sh from %s/utils..."
     runAfterUpdate(scriptPath)
 else:
     print "\nNo changes were made, skipping runAfterUpdate.sh."
@@ -514,7 +515,7 @@ if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or 
             downloadHex(hexList[selection], config)
         else:
             print "Skipping Arduino update"
-        util.removeDontRunFile(webPath + "/do_not_run_brewpi")
+    util.removeDontRunFile(webPath + "/do_not_run_brewpi")
 else:
     print "Skipping Arduino update"
 
