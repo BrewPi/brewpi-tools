@@ -250,10 +250,6 @@ echo -e "\n***** Downloading most recent BrewPi codebase... *****"
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
-# temporarily checkout develop in both dirs for testing until we merge into master
-sudo -u brewpi git --git-dir="$installPath"/.git --work-tree="$installPath" checkout develop
-sudo -u www-data git --git-dir="$webPath"/.git --work-tree="$webPath" checkout develop
-
 ###########
 ### If non-default paths are used, update config files accordingly
 ##########
@@ -289,6 +285,28 @@ if [ -a "$installPath"/utils/updateCron.sh ]; then
    bash "$installPath"/utils/updateCron.sh
 else
    echo "ERROR: Could not find updateCron.sh!"
+fi
+
+###########
+### Install wifi restart-er
+###########
+ifconfig -a|grep wlan
+if [ $? -eq 0 ]; then 
+    echo -e "*** *** *** ***"
+    echo -e ""
+    echo -e "I see you have a wifi adaptor configured."
+    echo -e "The wifi on a Raspberry Pi often drops out and does not reconnect for a variety of reasons."
+    read -p "Would you like to install a script to attempt to re-enable the wifi connection if it drops? [Y/n]: " wifi
+    if [ -z "$wifi" ]; then
+      wifi="Y"
+    else
+      case "$wifi" in
+        y | Y | yes | YES | Yes)
+            bash "$installPath"/utils/enableWifi.sh install
+        * )
+            pass;;
+      esac
+    fi
 fi
 
 ############

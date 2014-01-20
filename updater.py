@@ -384,6 +384,23 @@ for i in range(3):
 else:
     print "Maximum number of tries reached, updating BrewPi web interface aborted"
 
+### Check if wifi is present, and if it is not already added to cron.d file
+try:
+    with open('/etc/cron.d/brewpi') as f:
+        contents = f.read()
+    if "enableWlan.sh" not in contents:
+        wlanCheck = subprocess.Popen(["ifconfig|grep wlan"], shell = True, stdout = subprocess.PIPE)
+        if wlanCheck.stdout.read():
+            print "\nIt looks like you're running a wifi adapter on your Pi"
+            print "We recently added a utility script that can attempt to re-enable the WiFi connection on your Pi"
+            choice = raw_input ("if the connection were to drop. Would you like to install it now? [Y/n]: ")
+            if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+                print "\n"
+                wlanInstall = subprocess.Popen(["sudo "+scriptPath+"/utils/wifiChecker.sh install"], shell = True, stdout = subprocess.PIPE)
+                print wlanInstall.stdout.read()
+except (IOError):
+    print "ERROR: Could not find/open /etc/cron.d/brewpi"
+
 if changed:
     print "\nOne our more repositories were updated, running runAfterUpdate.sh from %s/utils..."
     runAfterUpdate(scriptPath)
