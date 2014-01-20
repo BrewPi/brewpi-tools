@@ -39,12 +39,12 @@ def quitBrewPi(webPath):
     print "BrewPi stopped."
 
 
-### calls update-this-repo, which returns 0 if the brewpi-tools repo is up-to-date
+### calls update-tools-repo, which returns 0 if the brewpi-tools repo is up-to-date
 def checkForUpdates():
-    if os.path.exists(os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"):
+    if os.path.exists(os.path.dirname(os.path.realpath(__file__)) + "/update-tools-repo.sh"):
         try:
             print "Checking whether the update script is up to date"
-            subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"],
+            subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-tools-repo.sh"],
                                   stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError:
             print "The update script was not up-to-date, but it should have been updated. Please re-run updater.py."
