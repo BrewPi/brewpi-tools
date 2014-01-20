@@ -22,6 +22,8 @@ import subprocess
 from time import localtime, strftime
 import sys
 import os
+import urllib2
+
 
 try:
     import git
@@ -29,16 +31,28 @@ except ImportError:
     print "This update script requires python-git, please install it with 'sudo apt-get install python-git"
     sys.exit(1)
 
+### Quits all running instances of BrewPi
+def quitBrewPi(webPath):
+    import BrewPiProcess
+    allProcesses = BrewPiProcess.BrewPiProcesses()
+    allProcesses.stopAll(webPath+"/do_not_run_brewpi")
+    print "BrewPi stopped."
 
-### calls update-this-repo, which returns 0 if the brewpi-tools repo is up-to-date
+
+### calls update-tools-repo, which returns 0 if the brewpi-tools repo is up-to-date
 def checkForUpdates():
-    try:
-        print "Checking whether the update script is up to date"
-        subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"],
-                              stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError:
-        print "The update script was not up-to-date, but it should have been updated. Please re-run updater.py."
-        exit(1)
+    if os.path.exists(os.path.dirname(os.path.realpath(__file__)) + "/update-tools-repo.sh"):
+        try:
+            print "Checking whether the update script is up to date"
+            subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-tools-repo.sh"],
+                                  stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError:
+            print "The update script was not up-to-date, but it should have been updated. Please re-run updater.py."
+            sys.exit(1)
+    else:
+        print "The required file update-this-repo.sh was not found. This is likely to occur if you manually copied updater.py here.\n"+ \
+            "Please run this from the original location you installed the brewpi-tools git repo and try again."
+        sys.exit(1)
 
 
 ### call installDependencies.sh, so commands are only defined in one place.
@@ -49,20 +63,6 @@ def runAfterUpdate(scriptDir):
     except subprocess.CalledProcessError:
         print "I tried to execute the runAfterUpdate.sh bash script, but an error occurred. " + \
               "Try running it from the command line in your <brewpi-script>/utils dir"
-
-
-### Function used if requested branch has not been checked out
-def checkout_repo(repo, branch):
-    print "Attempting to checkout " + branch
-    try:
-        repo.git.checkout(branch)
-    except git.GitCommandError, e:
-        print e
-        print "Checking out branch '%s' failed! Aborting..." % branch
-        return False
-    print "Success!"
-    return True
-
 
 ### Stash any local repo changes
 def stashChanges(repo):
@@ -77,7 +77,7 @@ def stashChanges(repo):
             repo.git.config('--get', 'user.name')
         except git.GitCommandError, e:
             print "Warning: No user name set for git, which is necessary to stash."
-            userName = raw_input("--> Please enter a global username for git on this system: ")
+            userName = raw_input("--> Please enter a global username for git on this system (just make something up): ")
             repo.git.config('--global', 'user.name', userName)
         try:
             repo.git.config('--get', 'user.email')
@@ -161,6 +161,8 @@ def check_repo(repo):
             except ValueError:
                 print "Use the number!"
                 continue
+            if selection == len(repo.remotes):
+                return False # choice = skip updating
             try:
                 remote = repo.remotes[selection]
             except IndexError:
@@ -205,7 +207,7 @@ def check_repo(repo):
             print "Use the number!"
             continue
         if selection == len(remoteBranches):
-            return False
+            return False # choice = skip updating
         try:
             remoteRef = remoteBranches[selection]
         except IndexError:
@@ -224,24 +226,29 @@ def check_repo(repo):
         choice = raw_input("You chose " + remoteBranch + " but it is not your currently active branch - " +
                            "would you like me to check it out for you now? (Required to continue) [Y/n]: ")
         if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-            try:
-                print repo.git.checkout(remoteBranch)
-                print "Successfully switched to " + remoteBranch
-                checkedOutDifferentBranch = True
-            except git.GitCommandError, e:
-                if "Your local changes to the following files would be overwritten by checkout" in str(e):
-                    print "Local changes exist in your current files that need to be stashed to continue"
-                    if not stashChanges(repo):
-                        return
-                    print "Trying to checkout again..."
+            stashedForCheckout = False
+            while True:
                 try:
-                    print repo.git.checkout(remoteBranch)
+                    if remoteBranch in repo.branches:
+                        print repo.git.checkout(remoteBranch)
+                    else:
+                        print repo.git.checkout(remoteRef, b=remoteBranch)
+                    print "Successfully switched to " + remoteBranch
                     checkedOutDifferentBranch = True
-                    print "Checkout successful"
+                    break
                 except git.GitCommandError, e:
-                    print e
-                    print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
-                    return False
+                    if not stashedForCheckout:
+                        if "Your local changes to the following files would be overwritten by checkout" in str(e):
+                            print "Local changes exist in your current files that need to be stashed to continue"
+                            if not stashChanges(repo):
+                                return
+                            print "Trying to checkout again..."
+                            stashedForCheckout = True # keep track of stashing, so it is only tried once
+                            continue # retry after stash
+                    else:
+                        print e
+                        print "I was unable to checkout. Please try it manually from the command line and re-run this tool"
+                        return False
         else:
             print "Skipping this branch"
             return False
@@ -273,12 +280,44 @@ def check_repo(repo):
         print "Your local version of " + localName + " is up to date!"
     return updated or checkedOutDifferentBranch
 
+### This function will retrieve the selected hex file from the web
+def downloadHex(binary, config):
+    try:
+        f = urllib2.urlopen(url+path+binary)
+        print "Downloading " + binary
 
-print "####################################################"
-print "####                                            ####"
-print "####      Welcome to the BrewPi Updater!        ####"
-print "####                                            ####"
-print "####################################################"
+        # Open our local file for writing
+        with open(scriptPath+"/utils/"+binary, "wb") as local_file:
+            local_file.write(f.read())
+
+    except urllib2.HTTPError, e:
+        print "HTTP Error:", e.code, url
+        return
+    except urllib2.URLError, e:
+        print "URL Error:", e.reason, url
+        return
+
+    import programArduino
+    boardType = binary.split("-")[1]
+    hexFile = scriptPath+'/utils/'+binary
+    chooseSettings = raw_input("Would you like to keep your current Arduino settings? [Y/n]: ")
+    chooseDevices = raw_input("Would you like to keep your current Arduino Device list? [Y/n]: ")
+    if chooseSettings is "Y" or "y" or "Yes" or "yes" or "":
+        restoreSettings = True
+    else:
+        restoreSettings = False
+    if chooseDevices is "Y" or "y" or "Yes" or "yes" or "":
+        restoreDevices = True
+    else:
+        restoreDevices = False
+    programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
+
+
+print "######################################################"
+print "####                                              ####"
+print "####        Welcome to the BrewPi Updater!        ####"
+print "####                                              ####"
+print "######################################################"
 print ""
 checkForUpdates()
 print ""
@@ -319,6 +358,9 @@ for i in range(3):
 else:
     print "Maximum number of tries reached, updating BrewPi scripts aborted"
 
+### Add BrewPi repo into the sys path, so we can import those modules as needed later
+sys.path.insert(0, scriptPath)
+
 print "\n\n*** Updating BrewPi web interface repository ***"
 for i in range(3):
     correctRepo = False
@@ -347,15 +389,135 @@ for i in range(3):
 else:
     print "Maximum number of tries reached, updating BrewPi web interface aborted"
 
+### Check if wifi is present, and if it is not already added to cron.d file
+try:
+    with open('/etc/cron.d/brewpi') as f:
+        contents = f.read()
+    if "enableWlan.sh" not in contents:
+        wlanCheck = subprocess.Popen(["ifconfig|grep wlan"], shell = True, stdout = subprocess.PIPE)
+        if wlanCheck.stdout.read():
+            print "\nIt looks like you're running a wifi adapter on your Pi"
+            print "We recently added a utility script that can attempt to re-enable the WiFi connection on your Pi"
+            choice = raw_input ("if the connection were to drop. Would you like to install it now? [Y/n]: ")
+            if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+                print "\n"
+                wlanInstall = subprocess.Popen(["sudo "+scriptPath+"/utils/wifiChecker.sh install"], shell = True, stdout = subprocess.PIPE)
+                print wlanInstall.stdout.read()
+                changed = True
+except (IOError):
+    print "ERROR: Could not find/open /etc/cron.d/brewpi"
+
 if changed:
-    print "\nOne our more repositories were updated, running runAfterUpdate.sh from %s/utils..."
+    print "\nOne our more repositories or the cron job were updated, running runAfterUpdate.sh from %s/utils..."
     runAfterUpdate(scriptPath)
 else:
     print "\nNo changes were made, skipping runAfterUpdate.sh."
     print "If you encounter problems, you can start it manually with:"
     print "sudo %s/utils/runAfterUpdate.sh" % scriptPath
 
-print "\nDon't forget to reprogram your Arduino with the latest hex file " \
-      "via the maintenance panel in the web interface."
+choice = raw_input("\nThe update script can automatically check your Arduino version and " +
+                   "program it with the latest hex file from the BrewPi server, would you like to do this now? [Y/n]:")
+if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
+    print "Stopping any running instances of BrewPi to check/update hex file..."
+    quitBrewPi(webPath)
 
-print "\n\n*** Done updating BrewPi! ***"
+    ### Check arduino hex file version against current brewpi version
+    print "\nChecking Arduino hex file version..."
+    try:
+        import BrewPiUtil as util
+    except:
+        print "Error reading config util path"
+
+    configFile = scriptPath + '/settings/config.cfg'
+    config = util.readCfgWithDefaults(configFile)
+
+    ### Get version number
+    try:
+        import brewpiVersion
+        ser, conn = util.setupSerial(config)
+        hwVersion = brewpiVersion.getVersionFromSerial(ser)
+        shield = hwVersion.shield
+        board = hwVersion.board
+        if "standard" in board:
+            board = "uno"
+        with open(scriptPath + '/brewpi.py', 'r') as versionFile:
+            for line in versionFile:
+                if 'compatibleHwVersion =' in line:
+                    bpVersion = line.split("= ")[1].replace("\"", "")
+                    break
+        if hwVersion is None:
+            print "Unable to retrieve version number from Arduino, skipping"
+        else:
+            print "Current Arduino version number: "+hwVersion.toString()
+            print "Arduino version number compatible with script:  "+bpVersion
+
+    except:
+        print "Unable to connect to Arduino, perhaps it is disconnected or otherwise unavailable"
+        print "Make sure to check http://dl.brewpi.com/brewpi-avr/stable/ for the most current version and upload via the BrewPi web interface"
+
+    if hwVersion.toString() in bpVersion:
+        print "Your Arduino is up to date, no need to upload a new hex file"
+    else:
+        print "Your Arduino is not up to date, Fetching available version list..."
+
+        hexList = []
+        url = "http://dl.brewpi.com/"
+        path = "brewpi-avr/stable/"
+        pattern = '<A HREF="/%s.*?">(.*?)</A>' % path
+        response = urllib2.urlopen(url+path).read()
+        for i in response.split("<table>")[1].split('<tr>'):
+            if ".hex" in i:
+                hexList.append(i.split("</a>")[0].split(">")[-1])
+        for i, ref in enumerate(hexList):
+            print "[%d] %s" % (i, ref)
+        print "[" + str(len(hexList)) + "] Skip updating the hex file"
+        print ""
+        found = False
+        for i in hexList:
+            if shield in i:
+                if board in i:
+                    hexGuess = i
+                    found = True
+                    break
+        if found:
+            print "I think the file you want is " + hexGuess
+            guess = str(hexList.index(hexGuess))
+        else:
+            guess = str(len(hexList))
+
+        ### List stable hex files on dl.brewpi.com, allow user to select the correct one to download and install
+        while 1:
+            try:
+                choice = raw_input("Enter the number of the hex file that corresponds to your Arduino: [" + guess + "]")
+                if choice is "":
+                    selection = int(guess)
+                else:
+                    selection = int(choice)
+            except ValueError:
+                print "Use the number!"
+                continue
+            if selection == len(hexList):
+                break
+            try:
+                foo = hexList[selection]
+            except IndexError:
+                print "Not a valid selection. Try again"
+                continue
+            break
+
+        if hexList is None:
+            print "Could not find hex file listing! Aborting"
+            sys.exit()
+
+        print "selection: " + str(selection)
+        ### Download the hex file chosen from list
+        if selection < len(hexList):
+            downloadHex(hexList[selection], config)
+        else:
+            print "Skipping Arduino update"
+    util.removeDontRunFile(webPath + "/do_not_run_brewpi")
+else:
+    print "Skipping Arduino update"
+
+
+print "\n\n*** Done updating BrewPi! ***\n"
