@@ -41,13 +41,18 @@ def quitBrewPi(webPath):
 
 ### calls update-this-repo, which returns 0 if the brewpi-tools repo is up-to-date
 def checkForUpdates():
-    try:
-        print "Checking whether the update script is up to date"
-        subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"],
-                              stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError:
-        print "The update script was not up-to-date, but it should have been updated. Please re-run updater.py."
-        exit(1)
+    if os.path.exists(os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"):
+        try:
+            print "Checking whether the update script is up to date"
+            subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-this-repo.sh"],
+                                  stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError:
+            print "The update script was not up-to-date, but it should have been updated. Please re-run updater.py."
+            sys.exit(1)
+    else:
+        print "The required file update-this-repo.sh was not found. This is likely to occur if you manually copied updater.py here.\n"+ \
+            "Please run this from the original location you installed the brewpi-tools git repo and try again."
+        sys.exit(1)
 
 
 ### call installDependencies.sh, so commands are only defined in one place.
