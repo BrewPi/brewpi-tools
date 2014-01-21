@@ -455,6 +455,9 @@ if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or 
         print "Unable to connect to Arduino, perhaps it is disconnected or otherwise unavailable"
         print "Make sure to check http://dl.brewpi.com/brewpi-avr/stable/ for the most current version and upload via the BrewPi web interface"
 
+    ser.close()  # close serial port
+    del ser  # Arduino won't reset when serial port is not completely removed
+
     if hwVersion.toString() in bpVersion:
         print "Your Arduino is up to date, no need to upload a new hex file"
     else:
