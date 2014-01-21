@@ -302,7 +302,7 @@ if [ $? -eq 0 ]; then
     else
       case "$wifi" in
         y | Y | yes | YES | Yes)
-            bash "$installPath"/utils/enableWifi.sh install
+            bash "$installPath"/utils/enableWifi.sh install;;
         * )
             pass;;
       esac
@@ -322,6 +322,8 @@ if grep -q "$defaultKey" /etc/ssh/ssh_host_rsa_key.pub; then
     echo "ERROR - Unable to replace SSH key. You probably want to take the time to do this on your own."
   fi
 fi
+
+echo -e "Done installing BrewPi!"
 
 echo -e "\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *"
 echo -e "Review the log above for any errors, otherwise, your initial environment install is complete!"
