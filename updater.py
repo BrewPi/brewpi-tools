@@ -431,6 +431,9 @@ if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or 
     configFile = scriptPath + '/settings/config.cfg'
     config = util.readCfgWithDefaults(configFile)
 
+    hwVersion = None
+    shield = None
+    board = None
     ### Get version number
     try:
         import brewpiVersion
@@ -448,8 +451,8 @@ if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or 
         if hwVersion is None:
             print "Unable to retrieve version number from Arduino, skipping"
         else:
-            print "Current Arduino version number: "+hwVersion.toString()
-            print "Arduino version number compatible with script:  "+bpVersion
+            print "Current Arduino version number: "  +hwVersion.toString()
+            print "Arduino version number compatible with script:  " + bpVersion
 
     except:
         print "Unable to connect to Arduino, perhaps it is disconnected or otherwise unavailable"
@@ -458,7 +461,7 @@ if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or 
     ser.close()  # close serial port
     del ser  # Arduino won't reset when serial port is not completely removed
 
-    if hwVersion.toString() in bpVersion:
+    if hwVersion is not None and hwVersion.toString() in bpVersion:
         print "Your Arduino is up to date, no need to upload a new hex file"
     else:
         print "Your Arduino is not up to date, Fetching available version list..."
@@ -477,8 +480,8 @@ if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or 
         print ""
         found = False
         for i in hexList:
-            if shield in i:
-                if board in i:
+            if shield is not None and shield in i:
+                if board is not None and board in i:
                     hexGuess = i
                     found = True
                     break
