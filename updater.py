@@ -354,12 +354,11 @@ for i in range(3):
         scriptPath = raw_input("What path did you install the BrewPi python scripts to?")
         continue
     changed = check_repo(scriptRepo) or changed
+    ### Add BrewPi repo into the sys path, so we can import those modules as needed later
+    sys.path.insert(0, scriptPath)
     break
 else:
     print "Maximum number of tries reached, updating BrewPi scripts aborted"
-
-### Add BrewPi repo into the sys path, so we can import those modules as needed later
-sys.path.insert(0, scriptPath)
 
 print "\n\n*** Updating BrewPi web interface repository ***"
 for i in range(3):
