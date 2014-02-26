@@ -389,7 +389,7 @@ else:
     print "Maximum number of tries reached, updating BrewPi web interface aborted"
 
 if changed:
-    print "\nOne our more repositories were updated, running runAfterUpdate.sh from %s/utils..."
+    print "\nOne our more repositories were updated, running runAfterUpdate.sh from %s/utils..." % scriptPath
     runAfterUpdate(scriptPath)
 else:
     print "\nNo changes were made, skipping runAfterUpdate.sh."
