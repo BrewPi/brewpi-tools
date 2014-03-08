@@ -287,28 +287,6 @@ else
    echo "ERROR: Could not find updateCron.sh!"
 fi
 
-###########
-### Install wifi restart-er
-###########
-ifconfig -a|grep wlan
-if [ $? -eq 0 ]; then 
-    echo -e "*** *** *** ***"
-    echo -e ""
-    echo -e "I see you have a wifi adaptor configured."
-    echo -e "The wifi on a Raspberry Pi often drops out and does not reconnect for a variety of reasons."
-    read -p "Would you like to install a script to attempt to re-enable the wifi connection if it drops? [Y/n]: " wifi
-    if [ -z "$wifi" ]; then
-      wifi="Y"
-    else
-      case "$wifi" in
-        y | Y | yes | YES | Yes)
-            bash "$installPath"/utils/enableWifi.sh install;;
-        * )
-            pass;;
-      esac
-    fi
-fi
-
 ############
 ### Check for insecure SSH key
 ############
