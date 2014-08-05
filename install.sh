@@ -117,7 +117,7 @@ else
     y | Y | yes | YES| Yes )
         installPath="/home/brewpi";; # accept default when y/yes is answered
     * )
-        pass;;
+        ;;
   esac
 fi
 echo "Installing script in $installPath";
@@ -152,7 +152,7 @@ else
     y | Y | yes | YES | Yes)
         webPath="/var/www";;
     * )
-        pass;;
+        ;;
   esac
 fi
 echo "Installing web interface in $webPath";
