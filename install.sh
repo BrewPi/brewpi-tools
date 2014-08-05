@@ -247,7 +247,9 @@ find "$webPath" -type d -exec chmod g+rwxs {} \;||die
 ### Clone BrewPi repositories
 ############
 echo -e "\n***** Downloading most recent BrewPi codebase... *****"
+cd "$installPath"
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
+cd "$webPath"
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
 ###########
