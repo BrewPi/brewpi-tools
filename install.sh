@@ -57,7 +57,7 @@ die () {
 echo -e "\nChecking for internet connection...\n"
 ping -c 3 github.com    
 rcode=$?
-if [ $? -ne 0]; then
+if [ $? -ne 0 ]; then
     echo "------------------------------------"
     echo "Unable to detect internet connection. Please check your connectivity and try again"
     exit 1    
