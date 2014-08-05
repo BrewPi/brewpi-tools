@@ -31,7 +31,7 @@
 
 # Make sure only root can run our script
 if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root: sudo ./install.sh)" 1>&2
+   echo "This script must be run as root: sudo ./install.sh" 1>&2
    exit 1
 fi
 
@@ -54,15 +54,21 @@ die () {
 ############
 ### Check for network connection
 ###########
-echo -e "\nChecking for internet connection...\n"
-ping -c 3 github.com    
-rcode=$?
+echo -e "\nChecking for Internet connection..."
+ping -c 3 github.com &> /dev/null
 if [ $? -ne 0 ]; then
     echo "------------------------------------"
-    echo "Unable to detect internet connection. Please check your connectivity and try again"
+    echo "Could not ping github.com. Are you sure you have a working Internet connection?"
+    echo "Installer will exit, because it needs to fetch code from github.com"
     exit 1    
 fi
 echo -e "Success!\n"
+
+
+echo "To accept the default answer, just press Enter."
+echo "The default is capitalized in a Yes/No question: [Y/n]"
+echo "or shown between brackets for other questions: [default]"
+
 
 ############
 ### Check whether installer is up-to-date
