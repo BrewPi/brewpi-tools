@@ -319,6 +319,12 @@ print "####        Welcome to the BrewPi Updater!        ####"
 print "####                                              ####"
 print "######################################################"
 print ""
+
+if os.geteuid() != 0:
+    print "This update script should be run as root."
+    print "Try running it gain with sudo, exiting..."
+    exit(1)
+
 checkForUpdates()
 print ""
 
