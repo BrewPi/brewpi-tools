@@ -31,7 +31,7 @@
 
 # Make sure only root can run our script
 if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root: sudo ./install.sh)" 1>&2
+   echo "This script must be run as root: sudo ./install.sh" 1>&2
    exit 1
 fi
 
@@ -50,6 +50,25 @@ die () {
   warn "$@"
   exit "$st"
 }
+
+############
+### Check for network connection
+###########
+echo -e "\nChecking for Internet connection..."
+ping -c 3 github.com &> /dev/null
+if [ $? -ne 0 ]; then
+    echo "------------------------------------"
+    echo "Could not ping github.com. Are you sure you have a working Internet connection?"
+    echo "Installer will exit, because it needs to fetch code from github.com"
+    exit 1    
+fi
+echo -e "Success!\n"
+
+
+echo "To accept the default answer, just press Enter."
+echo "The default is capitalized in a Yes/No question: [Y/n]"
+echo "or shown between brackets for other questions: [default]"
+
 
 ############
 ### Check whether installer is up-to-date
@@ -104,7 +123,7 @@ else
     y | Y | yes | YES| Yes )
         installPath="/home/brewpi";; # accept default when y/yes is answered
     * )
-        pass;;
+        ;;
   esac
 fi
 echo "Installing script in $installPath";
@@ -139,7 +158,7 @@ else
     y | Y | yes | YES | Yes)
         webPath="/var/www";;
     * )
-        pass;;
+        ;;
   esac
 fi
 echo "Installing web interface in $webPath";
@@ -176,7 +195,12 @@ if [ $(($nowTime - $lastUpdate)) -gt 604800 ] ; then
     sudo apt-get update||die
 fi
 
-sudo apt-get install -y rpi-update apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 python-serial python-simplejson python-configobj python-psutil python-git arduino-core git-core||die
+sudo apt-get install -y apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 git-core build-essential python-dev python-pip || die
+
+echo -e "\n***** Installing/updating required python packages via pip... *****\n"
+
+sudo pip install pyserial psutil simplejson configobj gitpython --upgrade
+
 
 echo -e "\n***** Done processing BrewPi dependencies *****\n"
 
@@ -247,7 +271,9 @@ find "$webPath" -type d -exec chmod g+rwxs {} \;||die
 ### Clone BrewPi repositories
 ############
 echo -e "\n***** Downloading most recent BrewPi codebase... *****"
+cd "$installPath"
 sudo -u brewpi git clone https://github.com/BrewPi/brewpi-script "$installPath"||die
+cd "$webPath"
 sudo -u www-data git clone https://github.com/BrewPi/brewpi-www "$webPath"||die
 
 ###########
