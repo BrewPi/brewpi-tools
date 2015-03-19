@@ -28,7 +28,7 @@ import urllib2
 try:
     import git
 except ImportError:
-    print "This update script requires python-git, please install it with 'sudo apt-get install python-git"
+    print "This update script requires gitpython, please install it with 'sudo pip install gitpython"
     sys.exit(1)
 
 ### Quits all running instances of BrewPi
