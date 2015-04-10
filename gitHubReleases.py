@@ -2,7 +2,6 @@ import urllib2
 import simplejson as json
 import os
 
-
 class gitHubReleases:
     def __init__(self, url):
         self.url = url
@@ -33,12 +32,32 @@ class gitHubReleases:
 
     # writes .bin in release tagged with tag to directory
     # defaults to ./downloads/tag_name/ as download location
-    def getBin(self, tag, path = None):
+    def getBin(self, tag, controllerType, shieldRev=None, path = None):
         try:
             match = (release for release in self.releases if release["tag_name"] == tag).next()
-            downloadUrl = (asset["browser_download_url"] for asset in match["assets"] if ".bin" in asset["name"]).next()
         except StopIteration:
             print "tag '{0}' not found".format(tag)
+            return None
+        downloadUrl = None
+
+        AllUrls = (asset["browser_download_url"] for asset in match["assets"])
+        if "spark" in controllerType:
+            fileNameParts = [".bin", controllerType]
+        elif "arduino" in controllerType:
+            fileNameParts = [".hex", controllerType, shieldRev]
+        else:
+            print "unknown controller type"
+            return None
+
+        for url in  AllUrls:
+            if all(x in url for x in fileNameParts):
+                downloadUrl = url
+
+        if not downloadUrl:
+            error = "Could not find download in release {0} for {1}".format(tag, controllerType)
+            if shieldRev:
+                 error = error + "with a {1} shield".format(shieldRev)
+            print error
             return None
 
         if path == None:
@@ -58,19 +77,14 @@ class gitHubReleases:
     def getTags(self):
         return self.releases[0]["tag_name"]
 
-
 if __name__ == "__main__":
     # test code
     releases = gitHubReleases("https://api.github.com/repos/BrewPi/firmware")
-
     latest = releases.getLatestTag()
     print "Latest tag: " + latest
     print "Downloading binary for latest tag"
-    localFileName = releases.getBin(latest)
-    print "Latest binary downloaded to " + localFileName
-
-
-
-# print json.load(urllib2.urlopen(firmwareUrl + "/releases/latest"))
+    localFileName = releases.getBin(latest, "spark-core")
+    if localFileName:
+        print "Latest binary downloaded to " + localFileName
 
 

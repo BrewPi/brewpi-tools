@@ -31,14 +31,6 @@ except ImportError:
     print "This update script requires gitpython, please install it with 'sudo pip install gitpython"
     sys.exit(1)
 
-### Quits all running instances of BrewPi
-def quitBrewPi(webPath):
-    import BrewPiProcess
-    allProcesses = BrewPiProcess.BrewPiProcesses()
-    allProcesses.stopAll(webPath+"/do_not_run_brewpi")
-    print "BrewPi stopped."
-
-
 ### calls update-tools-repo, which returns 0 if the brewpi-tools repo is up-to-date
 def checkForUpdates():
     if os.path.exists(os.path.dirname(os.path.realpath(__file__)) + "/update-tools-repo.sh"):
@@ -281,7 +273,7 @@ def check_repo(repo):
     return updated or checkedOutDifferentBranch
 
 ### This function will retrieve the selected hex file from the web
-def downloadHex(binary, config):
+def downloadBinary(binary, config):
     try:
         f = urllib2.urlopen(url+path+binary)
         print "Downloading " + binary
@@ -297,7 +289,7 @@ def downloadHex(binary, config):
         print "URL Error:", e.reason, url
         return
 
-    import programArduino
+    import programController
     boardType = binary.split("-")[1]
     hexFile = scriptPath+'/utils/'+binary
     chooseSettings = raw_input("Would you like to keep your current Arduino settings? [Y/n]: ")
@@ -310,7 +302,7 @@ def downloadHex(binary, config):
         restoreDevices = True
     else:
         restoreDevices = False
-    programArduino.programArduino(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
+    programController.programController(config, boardType, hexFile, {'settings': restoreSettings, 'devices': restoreDevices})
 
 
 print "######################################################"
@@ -402,115 +394,12 @@ else:
     print "If you encounter problems, you can start it manually with:"
     print "sudo %s/utils/runAfterUpdate.sh" % scriptPath
 
-choice = raw_input("\nThe update script can automatically check your Arduino version and " +
-                   "program it with the latest hex file from the BrewPi server, would you like to do this now? [Y/n]:")
+choice = raw_input("\nThe update script can automatically check your controller version and " +
+                   "program it with the latest release on GitHub, would you like to do this now? [Y/n]:")
 if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-    print "Stopping any running instances of BrewPi to check/update hex file..."
-    quitBrewPi(webPath)
-
-    ### Check arduino hex file version against current brewpi version
-    print "\nChecking Arduino hex file version..."
-    try:
-        import BrewPiUtil as util
-    except:
-        print "Error reading config util path"
-
-    configFile = scriptPath + '/settings/config.cfg'
-    config = util.readCfgWithDefaults(configFile)
-
-    hwVersion = None
-    shield = None
-    board = None
-    ### Get version number
-    try:
-        import brewpiVersion
-        ser, conn = util.setupSerial(config)
-        hwVersion = brewpiVersion.getVersionFromSerial(ser)
-        shield = hwVersion.shield
-        board = hwVersion.board
-        if "standard" in board:
-            board = "uno"
-        with open(scriptPath + '/brewpi.py', 'r') as versionFile:
-            for line in versionFile:
-                if 'compatibleHwVersion =' in line:
-                    bpVersion = line.split("= ")[1].replace("\"", "")
-                    break
-        if hwVersion is None:
-            print "Unable to retrieve version number from Arduino, skipping"
-        else:
-            print "Current Arduino version number: "  +hwVersion.toString()
-            print "Arduino version number compatible with script:  " + bpVersion
-
-    except:
-        print "Unable to connect to Arduino, perhaps it is disconnected or otherwise unavailable"
-        print "Make sure to check http://dl.brewpi.com/brewpi-avr/stable/ for the most current version and upload via the BrewPi web interface"
-
-    ser.close()  # close serial port
-    del ser  # Arduino won't reset when serial port is not completely removed
-
-    if hwVersion is not None and hwVersion.toString() in bpVersion:
-        print "Your Arduino is up to date, no need to upload a new hex file"
-    else:
-        print "Your Arduino is not up to date, Fetching available version list..."
-
-        hexList = []
-        url = "http://dl.brewpi.com/"
-        path = "brewpi-avr/stable/"
-        pattern = '<A HREF="/%s.*?">(.*?)</A>' % path
-        response = urllib2.urlopen(url+path).read()
-        for i in response.split("<table>")[1].split('<tr>'):
-            if ".hex" in i:
-                hexList.append(i.split("</a>")[0].split(">")[-1])
-        for i, ref in enumerate(hexList):
-            print "[%d] %s" % (i, ref)
-        print "[" + str(len(hexList)) + "] Skip updating the hex file"
-        print ""
-        found = False
-        for i in hexList:
-            if shield is not None and shield in i:
-                if board is not None and board in i:
-                    hexGuess = i
-                    found = True
-                    break
-        if found:
-            print "I think the file you want is " + hexGuess
-            guess = str(hexList.index(hexGuess))
-        else:
-            guess = str(len(hexList))
-
-        ### List stable hex files on dl.brewpi.com, allow user to select the correct one to download and install
-        while 1:
-            try:
-                choice = raw_input("Enter the number of the hex file that corresponds to your Arduino: [" + guess + "]")
-                if choice is "":
-                    selection = int(guess)
-                else:
-                    selection = int(choice)
-            except ValueError:
-                print "Use the number!"
-                continue
-            if selection == len(hexList):
-                break
-            try:
-                foo = hexList[selection]
-            except IndexError:
-                print "Not a valid selection. Try again"
-                continue
-            break
-
-        if hexList is None:
-            print "Could not find hex file listing! Aborting"
-            sys.exit()
-
-        print "selection: " + str(selection)
-        ### Download the hex file chosen from list
-        if selection < len(hexList):
-            downloadHex(hexList[selection], config)
-        else:
-            print "Skipping Arduino update"
-    util.removeDontRunFile(webPath + "/do_not_run_brewpi")
+    TODO
 else:
-    print "Skipping Arduino update"
+    print "Skipping controller update"
 
 
 print "\n\n*** Done updating BrewPi! ***\n"
