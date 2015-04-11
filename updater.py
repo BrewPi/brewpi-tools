@@ -31,6 +31,15 @@ except ImportError:
     print "This update script requires gitpython, please install it with 'sudo pip install gitpython"
     sys.exit(1)
 
+
+### Quits all running instances of BrewPi
+def quitBrewPi(webPath):
+    import BrewPiProcess
+    allProcesses = BrewPiProcess.BrewPiProcesses()
+    allProcesses.stopAll(webPath+"/do_not_run_brewpi")
+    print "BrewPi stopped."
+
+
 ### calls update-tools-repo, which returns 0 if the brewpi-tools repo is up-to-date
 def checkForUpdates():
     if os.path.exists(os.path.dirname(os.path.realpath(__file__)) + "/update-tools-repo.sh"):
@@ -328,6 +337,7 @@ scriptPath = '/home/brewpi'
 webPath = '/var/www'
 
 print "\n\n*** Updating BrewPi script repository ***"
+quitBrewPi(webPath)
 for i in range(3):
     correctRepo = False
     try:
