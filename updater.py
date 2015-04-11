@@ -397,7 +397,12 @@ else:
 choice = raw_input("\nThe update script can automatically check your controller version and " +
                    "program it with the latest release on GitHub, would you like to do this now? [Y/n]:")
 if (choice is "") or (choice is "Y") or (choice is "y") or (choice is "yes") or (choice is "YES"):
-    TODO
+    try:
+        sys.path.append(scriptPath + "/utils")  # append directory to be able to import files
+        import updateFirmware
+    except:
+        print "Could not find updateFirmware.py in the script directory, is it up-to-date?"
+    updateFirmware.updateFromGitHub(True) # update and prompt user for restoring settings
 else:
     print "Skipping controller update"
 
