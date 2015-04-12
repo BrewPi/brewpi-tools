@@ -70,7 +70,7 @@ def checkForUpdates():
             subprocess.check_call(["sudo", "bash", os.path.dirname(os.path.realpath(__file__)) + "/update-tools-repo.sh"],
                                   stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError:
-            print "The update script was not up-to-date, but it should have been updated. Please re-run updater.py."
+            print "This script was not up-to-date and has been automatically updated. Please re-run updater.py."
             sys.exit(1)
     else:
         print "The required file update-this-repo.sh was not found. This is likely to occur if you manually copied updater.py here.\n"+ \
