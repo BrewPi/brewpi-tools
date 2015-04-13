@@ -366,11 +366,10 @@ for i in range(3):
         print "The path '%s' does not seem to be the BrewPi python script git repository" % scriptPath
         scriptPath = raw_input("What path did you install the BrewPi python scripts to?")
         continue
-    changed = check_repo(scriptRepo) or changed
     ### Add BrewPi repo into the sys path, so we can import those modules as needed later
     sys.path.insert(0, scriptPath)
-    if changed:
-        quitBrewPi(webPath)
+    quitBrewPi(webPath) # exit running instances of BrewPi
+    changed = check_repo(scriptRepo) or changed
     break
 else:
     print "Maximum number of tries reached, updating BrewPi scripts aborted"
