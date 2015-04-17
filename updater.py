@@ -51,9 +51,12 @@ for o, a in opts:
 ### Quits all running instances of BrewPi
 def quitBrewPi(webPath):
     print "\nStopping running instances of BrewPi"
-    import BrewPiProcess
-    allProcesses = BrewPiProcess.BrewPiProcesses()
-    allProcesses.stopAll(webPath+"/do_not_run_brewpi")
+    try:
+        import BrewPiProcess
+        allProcesses = BrewPiProcess.BrewPiProcesses()
+        allProcesses.stopAll(webPath+"/do_not_run_brewpi")
+    except:
+        pass  # if we cannot stop running instances of the script, just continue. Might be a very old version
 
 # remove do_not_run file
 def startBrewPi(webPath):
