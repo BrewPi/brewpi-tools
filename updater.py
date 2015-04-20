@@ -416,12 +416,12 @@ else:
 choice = raw_input("\nThe update script can automatically check your controller firmware version and " +
                    "program it with the latest release on GitHub, would you like to do this now? [Y/n]:")
 if any(choice == x for x in ["", "yes", "Yes", "YES", "yes", "y", "Y"]):
-    try:
-        sys.path.append(scriptPath + "/utils")  # append directory to be able to import files
-        import updateFirmware
-    except:
-        print "Could not find updateFirmware.py in the script directory, is it up-to-date?"
-    updateFirmware.updateFromGitHub(userInput) # update and restore settings, do not prompt user
+    # start as a separate python process, or it will not use the updated modules
+    p = subprocess.Popen("python {0} --silent".format(os.path.join(scriptPath, 'utils', 'updateFirmware.py')), shell=True)
+    p.wait()
+    result = p.returncode
+    if(result == 0):
+        print "Firmware update done"
 else:
     print "Skipping controller update"
 
