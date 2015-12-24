@@ -17,13 +17,18 @@
 # along with BrewPi.  If not, see <http://www.gnu.org/licenses/>.
 
 ########################
-### This script assumes a clean Wheezy Raspbian install.
+### This script assumes a clean Raspbian install.
 ### Freeder, v1.0, Aug 2013
 ### Elco, Oct 2013
 ### Using a custom 'die' function shamelessly stolen from http://mywiki.wooledge.org/BashFAQ/101
 ### Using ideas even more shamelessly stolen from Elco and mdma. Thanks guys!
 ########################
 
+############
+### Detect Rasbian Version
+###########
+
+read -d . DEBIAN_VERSION < /etc/debian_version
 
 ############
 ### Init
@@ -149,18 +154,21 @@ else
   fi
 fi
 
-echo -e "\nAny data in the following location will be ERASED during install!"
-read -p "What should be the path to your web directory for brewpi? [/var/www]: " webPath
-if [ -z "$webPath" ]; then
+# Adjust default path to match the Raspian flavor of Apache
+if [ $DEBIAN_VERSION -lt 8 ]; then
   webPath="/var/www"
 else
-  case "$webPath" in
-    y | Y | yes | YES | Yes)
-        webPath="/var/www";;
-    * )
-        ;;
-  esac
+  # Jessie and onward
+  webPath="/var/www/html"
 fi
+
+echo -e "\nAny data in the following location will be ERASED during install!"
+read -p "What should be the path to your web directory for brewpi? [$webPath]: " webPathInput
+
+if test "$webPathInput" != ""; then
+    webPath = webPathInput
+fi
+
 echo "Installing web interface in $webPath";
 
 if [ -d "$webPath" ]; then
@@ -172,16 +180,14 @@ if [ -d "$webPath" ]; then
     esac
   fi
 else
-  if [ "$webPath" != "/var/www" ]; then
-    read -p "This path does not exist, would you like to create it? [Y/n] " yn
-    if [ -z "$yn" ]; then
-      yn="y"
-    fi
-    case "$yn" in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir "$webPath";;
-        * ) echo "Aborting..."; exit;;
-    esac
+  read -p "This path does not exist, would you like to create it? [Y/n] " yn
+  if [ -z "$yn" ]; then
+    yn="y"
   fi
+  case "$yn" in
+      y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir "$webPath";;
+      * ) echo "Aborting..."; exit;;
+  esac
 fi
 
 ############
