@@ -174,7 +174,7 @@ def check_repo(repo):
 
     print "You are on branch " + localBranch
 
-    if localBranch != "master" and not userInput:
+    if not localBranch in ["master", "legacy"] and not userInput:
         print "Your checked out branch is not master, our stable release branch."
         choice = raw_input("It is highly recommended that you switch to the stable master branch."
                           " Would you like to do that? [Y/n]:")
