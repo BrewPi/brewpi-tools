@@ -166,7 +166,7 @@ echo -e "\nAny data in the following location will be ERASED during install!"
 read -p "What should be the path to your web directory for brewpi? [$webPath]: " webPathInput
 
 if test "$webPathInput" != ""; then
-    webPath = webPathInput
+    webPath=webPathInput
 fi
 
 echo "Installing web interface in $webPath";
