@@ -155,7 +155,7 @@ else
 fi
 
 # Adjust default path to match the Raspian flavor of Apache
-if [ $DEBIAN_VERSION -lt 8 ]; then
+if [ ${DEBIAN_VERSION} -lt 8 ]; then
   webPath="/var/www"
 else
   # Jessie and onward
@@ -165,8 +165,8 @@ fi
 echo -e "\nAny data in the following location will be ERASED during install!"
 read -p "What should be the path to your web directory for brewpi? [$webPath]: " webPathInput
 
-if test "$webPathInput" != ""; then
-    webPath=webPathInput
+if [ -z "$webPathInput" ]; then
+    webPath=${webPathInput}
 fi
 
 echo "Installing web interface in $webPath";
