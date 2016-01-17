@@ -148,7 +148,7 @@ else
       yn="y"
     fi
     case "$yn" in
-        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir "$installPath";;
+        y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir -p "$installPath";;
         * ) echo "Aborting..."; exit;;
     esac
   fi
@@ -165,7 +165,7 @@ fi
 echo -e "\nAny data in the following location will be ERASED during install!"
 read -p "What should be the path to your web directory for brewpi? [$webPath]: " webPathInput
 
-if [ -z "$webPathInput" ]; then
+if [ "$webPathInput" ]; then
     webPath=${webPathInput}
 fi
 
@@ -185,7 +185,7 @@ else
     yn="y"
   fi
   case "$yn" in
-      y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir "$webPath";;
+      y | Y | yes | YES| Yes ) echo "Creating directory..."; mkdir -p "$webPath";;
       * ) echo "Aborting..."; exit;;
   esac
 fi
@@ -230,16 +230,16 @@ echo -e "\n***** Checking install directories *****"
 if [ -d "$installPath" ]; then
   echo "$installPath already exists"
 else
-  mkdir "$installPath"
+  mkdir -p "$installPath"
 fi
 
 dirName=$(date +%F-%k:%M:%S)
 if [ "$(ls -A ${installPath})" ]; then
   echo "Script install directory is NOT empty, backing up to this users home dir and then deleting contents..."
     if ! [ -a ~/brewpi-backup/ ]; then
-      mkdir ~/brewpi-backup
+      mkdir -p ~/brewpi-backup
     fi
-    mkdir ~/brewpi-backup/"$dirName"
+    mkdir -p ~/brewpi-backup/"$dirName"
     cp -R "$installPath" ~/brewpi-backup/"$dirName"/||die
     rm -rf "$installPath"/*||die
     find "$installPath"/ -name '.*' | xargs rm -rf||die
@@ -248,15 +248,15 @@ fi
 if [ -d "$webPath" ]; then
   echo "$webPath already exists"
 else
-  mkdir "$webPath"
+  mkdir -p "$webPath"
 fi
 if [ "$(ls -A ${webPath})" ]; then
   echo "Web directory is NOT empty, backing up to this users home dir and then deleting contents..."
   if ! [ -a ~/brewpi-backup/ ]; then
-    mkdir ~/brewpi-backup
+    mkdir -p ~/brewpi-backup
   fi
   if ! [ -a ~/brewpi-backup/"$dirName"/ ]; then
-    mkdir ~/brewpi-backup/"$dirName"
+    mkdir -p ~/brewpi-backup/"$dirName"
   fi
   cp -R "$webPath" ~/brewpi-backup/"$dirName"/||die
   rm -rf "$webPath"/*||die
