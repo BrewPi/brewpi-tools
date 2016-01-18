@@ -25,12 +25,6 @@
 ########################
 
 ############
-### Detect Rasbian Version
-###########
-
-read -d . DEBIAN_VERSION < /etc/debian_version
-
-############
 ### Init
 ###########
 
@@ -86,6 +80,23 @@ if [ $? -ne 0 ]; then
     echo "The update script was not up-to-date, but it should have been updated. Please re-run install.sh."
     exit 1
 fi
+
+
+############
+### Install required packages
+############
+echo -e "\n***** Installing/updating required packages... *****\n"
+lastUpdate=$(stat -c %Y /var/lib/apt/lists)
+nowTime=$(date +%s)
+if [ $(($nowTime - $lastUpdate)) -gt 604800 ] ; then
+    echo "last apt-get update was over a week ago. Running apt-get update before updating dependencies"
+    sudo apt-get update||die
+fi
+sudo apt-get install -y apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 git-core build-essential python-dev python-pip || die
+echo -e "\n***** Installing/updating required python packages via pip... *****\n"
+sudo pip install pyserial psutil simplejson configobj gitpython --upgrade
+echo -e "\n***** Done processing BrewPi dependencies *****\n"
+
 
 ############
 ### Setup questions
@@ -154,16 +165,13 @@ else
   fi
 fi
 
-# Adjust default path to match the Raspian flavor of Apache
-if [ ${DEBIAN_VERSION} -lt 8 ]; then
-  webPath="/var/www"
-else
-  # Jessie and onward
-  webPath="/var/www/html"
-fi
+echo "Searching for default web install location..."
+webPath=`grep DocumentRoot /etc/apache2/sites-enabled/000-default* |xargs |cut -d " " -f2`
+echo "Found $webPath"
+
 
 echo -e "\nAny data in the following location will be ERASED during install!"
-read -p "What should be the path to your web directory for brewpi? [$webPath]: " webPathInput
+read -p "Where would you like to copy the BrewPi web files to? [$webPath]: " webPathInput
 
 if [ "$webPathInput" ]; then
     webPath=${webPathInput}
@@ -189,26 +197,6 @@ else
       * ) echo "Aborting..."; exit;;
   esac
 fi
-
-############
-### Install required packages
-############
-echo -e "\n***** Installing/updating required packages... *****\n"
-lastUpdate=$(stat -c %Y /var/lib/apt/lists)
-nowTime=$(date +%s)
-if [ $(($nowTime - $lastUpdate)) -gt 604800 ] ; then
-    echo "last apt-get update was over a week ago. Running apt-get update before updating dependencies"
-    sudo apt-get update||die
-fi
-
-sudo apt-get install -y apache2 libapache2-mod-php5 php5-cli php5-common php5-cgi php5 git-core build-essential python-dev python-pip || die
-
-echo -e "\n***** Installing/updating required python packages via pip... *****\n"
-
-sudo pip install pyserial psutil simplejson configobj gitpython --upgrade
-
-
-echo -e "\n***** Done processing BrewPi dependencies *****\n"
 
 ############
 ### Create/configure user accounts
