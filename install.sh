@@ -69,12 +69,6 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "Success!\n"
 
-
-echo "To accept the default answer, just press Enter."
-echo "The default is capitalized in a Yes/No question: [Y/n]"
-echo "or shown between brackets for other questions: [default]"
-
-
 ############
 ### Check whether installer is up-to-date
 ############
@@ -120,6 +114,11 @@ if [ "$free" -le "512000" ]; then
 else
     echo -e "\nDisk usage is $free_percentage, free disk space is $free_readable. Enough to install BrewPi\n"
 fi
+
+
+echo "To accept the default answer, just press Enter."
+echo "The default is capitalized in a Yes/No question: [Y/n]"
+echo "or shown between brackets for other questions: [default]"
 
 date=$(date)
 read -p "The time is currently set to $date. Is this correct? [Y/n]" choice
