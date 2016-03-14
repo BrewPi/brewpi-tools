@@ -77,7 +77,8 @@ def checkForUpdates():
             sys.exit(1)
     else:
         print "The required file update-this-repo.sh was not found. This is likely to occur if you manually copied updater.py here.\n"+ \
-            "Please run this from the original location you installed the brewpi-tools git repo and try again."
+            "Please run this from the original location you installed the brewpi-tools git repo and try again.\n" + \
+            "Hint: use the up arrow on your keyboard."
         sys.exit(1)
 
 
@@ -417,7 +418,11 @@ choice = raw_input("\nThe update script can automatically check your controller 
                    "program it with the latest release on GitHub, would you like to do this now? [Y/n]:")
 if any(choice == x for x in ["", "yes", "Yes", "YES", "yes", "y", "Y"]):
     # start as a separate python process, or it will not use the updated modules
-    p = subprocess.Popen("python {0} --silent".format(os.path.join(scriptPath, 'utils', 'updateFirmware.py')), shell=True)
+    updateScript = os.path.join(scriptPath, 'utils', 'updateFirmware.py')
+    if userInput:
+        p = subprocess.Popen("python {0} --beta".format(updateScript), shell=True)
+    else:
+        p = subprocess.Popen("python {0} --silent".format(updateScript), shell=True)
     p.wait()
     result = p.returncode
     if(result == 0):
