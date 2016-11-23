@@ -343,7 +343,11 @@ print ""
 
 changed = False
 scriptPath = '/home/brewpi'
-webPath = '/var/www'
+
+# set a first guess for the web path. If files are not found here, the user is asked later
+webPath = '/var/www/html' # default since Jessie
+if not os.path.isdir('/var/www/html'):
+    webPath = '/var/www' # earlier default www dir
 
 print "\n\n*** Updating BrewPi script repository ***"
 
