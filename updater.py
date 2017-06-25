@@ -341,6 +341,9 @@ if os.geteuid() != 0:
 checkForUpdates()
 print ""
 
+print "It is not recommended to update during a brew!\n" \
+      "If you are actively logging a brew we recommend canceling the the update with ctrl-c."
+
 changed = False
 scriptPath = '/home/brewpi'
 
@@ -436,3 +439,4 @@ else:
 
 startBrewPi(webPath)
 print "\n\n*** Done updating BrewPi! ***\n"
+print "Please refresh your browser with ctrl-F5 to make sure it is not swowing and old cached version."
