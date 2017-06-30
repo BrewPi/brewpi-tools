@@ -439,4 +439,4 @@ else:
 
 startBrewPi(webPath)
 print "\n\n*** Done updating BrewPi! ***\n"
-print "Please refresh your browser with ctrl-F5 to make sure it is not swowing and old cached version."
+print "Please refresh your browser with ctrl-F5 to make sure it is not showing an old cached version."
