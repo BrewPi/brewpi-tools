@@ -335,7 +335,7 @@ print ""
 
 if os.geteuid() != 0:
     print "This update script should be run as root."
-    print "Try running it gain with sudo, exiting..."
+    print "Try running it again with sudo, exiting..."
     exit(1)
 
 checkForUpdates()
